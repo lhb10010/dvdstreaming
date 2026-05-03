@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+<div th:include="topBar :: content"></div>
+
+<!-- Video Section -->
+<div class="videoPlayerDiv">
+    <video id="mainVideo" width="716" height="360" controls="controls" preload="none" autoplay="autoplay">
+        <source id="vidSrc" type="video/mp4">
+        <!-- th:src="${'/video/' + movie.video}" -->
+        <!-- Media Source Extensions!!!!!!!! -->
+    </video>
+</div>
+
+<!-- Suggestions section -->
+
+</body>
+<script th:inline="javascript">
+
+    //temp
+    let movie = /*[[${movie}]]*/ [];
+    console.log(movie);
+    console.log(movie.video);
+    //document.getElementById("vidSrc").setAttribute("src", "/video/" + movie.video);
+
+
+    //setup time variables
+    let fragInterval = 2; // in seconds
+    let loadAhead = 15; //in seconds
+    let loadBehind = 30; // in seconds
+    let checkLoadIntervol = 1000; // in milliseconds
+    let checkSrcBufferQueue = 30;
+    let maxQueueLen = (loadAhead / fragInterval) * 2;
+
+
+    //setup other variables
+    let videoElement = document.getElementById("mainVideo");
+    let initDone = false;
+    let srcBuffer;
+    let srcBufferQueue = [];
+
+    //temp
+    let loadedFrags = [];
+
+
+    //setup small helper functions
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+    if(!window.MediaSource){
+        //TODO error
+    }
+    else{
+        let media = new MediaSource();
+        videoElement.src= URL.createObjectURL(media);
+        media.addEventListener('sourceopen', srcOpen);
+    }
+
+    let srcOpened = false;
+
+    async function srcOpen(e) {
+
+        if(!srcOpened) {
+            srcOpened = true;
+
+            URL.revokeObjectURL(videoElement.src);
+            let mime = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
+            let media = e.target;
+
+            srcBuffer = media.addSourceBuffer(mime);
+            srcBuffer.mode = 'segments';
+            await getInitBox();
+
+
+            //ready for fragments
+            scrBufferQueueProcessing();
+            initDone = true;
+            console.log("init");
+            srcBuffer.addEventListener('error', (event) => {
+                console.error('MediaSource Error:', {
+                    error: srcBuffer.error,
+                    event: event
+                });
+            });
+        }
+    }
+
+    async function getInitBox(){
+
+        while(srcBuffer.updating){
+            sleep(5);
+        }
+
+        let data = {
+            target: 'moov'
+        };
+
+        fetch("/video/" + movie.video, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        }).then(response => response.arrayBuffer()).then(buffer => {
+            srcBuffer.appendBuffer(buffer);
+        });
+
+        while(srcBuffer.updating){
+            sleep(5);
+        }
+
+    }
+
+    //src buffer queue -------------------------------------------------------------------------------
+
+    //TODO make interval for better error recovery
+    async function scrBufferQueueProcessing(){
+
+        let i = 0;
+
+        while(true){
+
+            srcBuffer.addEventListener("error", (e) => {
+                console.error("Error appending buffer:", e);
+
+            });
+
+            if(srcBufferQueue.length < 1){
+                await sleep(checkSrcBufferQueue);
+            }
+            else if(srcBuffer.updating === true){
+                await sleep(10);
+            }
+            else{
+
+                console.log(srcBufferQueue);
+                if(srcBufferQueue.at(0).at(0)){
+                    srcBuffer.appendBuffer(srcBufferQueue.at(0).at(1));
+                    console.log(srcBufferQueue.at(0).at(2))
+                    while(srcBuffer.updating){
+                        await sleep(5);
+                    }
+                }
+                else{
+                    srcBuffer.remove(srcBufferQueue.at(0).at(1), srcBufferQueue.at(0).at(2));
+                }
+
+                //remove element from queue
+                if(srcBufferQueue.length > 1){
+                    srcBufferQueue.shift();
+                    /*
+                    if(srcBufferQueue.length > maxQueueLen){
+                        srcBufferQueue = srcBufferQueue.slice(0, 9);
+                    }
+                    */
+
+                }
+                else{
+                    srcBufferQueue = [];
+                }
+
+                //logging
+                console.log("src Buffer queue");
+                console.log(srcBufferQueue);
+                i++;
+            }
+        }
+    }
+
+
+    //load Fragments ----------------------------------------------------------------------------------------------
+    //TODO more efficient?
+    async function loadTime(start, end){
+
+        //get start frag
+        let fragStartTime =  start - (start % fragInterval);
+        let startFrag = fragStartTime / fragInterval;
+
+
+        //get end frag
+        let fragEndTime = end - (end % fragInterval);
+        if (end % fragInterval !== 0){
+            fragEndTime = fragEndTime + fragInterval;
+        }
+        let endFrag = fragEndTime / fragInterval;
+
+
+        //get each fragment from server
+        let promises = [];
+        for(let i = startFrag; i < endFrag; i++){
+            promises.push(getFragFromServer(i));
+        }
+
+        const results = await Promise.all(promises);
+        //TODO do something with results
+
+    }
+
+    async function getFragFromServer(fragNum){
+
+        if(loadedFrags.includes(fragNum))
+            return;
+
+        //init data
+        let data = { target: 'frag', num: fragNum };
+
+        //create request
+        const response = await fetch("/video/" + movie.video, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const buffer = await response.arrayBuffer();
+
+
+        //add to buffer queue
+        srcBufferQueue.push([true, buffer, fragNum]);
+
+    }
+
+
+
+    //periodically load and unload video
+    //TODO timeout
+    setInterval(function () {
+        if(initDone){
+            let ranges = videoElement.buffered;
+            let currentTime = videoElement.currentTime;
+
+
+            //loaded frags
+            loadedFrags = [];
+
+            //load new
+            //TODO limit to duration
+            let currentLoaded = false;
+            let currentLoadedStart = 0;
+            let currentLoadedEnd = 0;
+            for (let i = 0; i < ranges.length; i++){
+
+                //temp
+                addFragsToLoadedFrags(timeRangeToFrags(ranges.start(i), ranges.end(i)));
+
+                if(ranges.start(i) <= currentTime && ranges.end(i) >= currentTime){
+                    currentLoaded = true;
+                    if(ranges.end(i) < currentTime + loadAhead){
+                        currentLoadedStart = ranges.end(i);
+                        currentLoadedEnd = currentTime + loadAhead;
+                    }
+                }
+            }
+            console.log("loadedFrags")
+            console.log(loadedFrags);
+            if(!currentLoaded){
+                loadTime(currentTime, currentTime + loadAhead);
+            }
+            else{
+                loadTime(currentLoadedStart, currentLoadedEnd);
+            }
+
+
+
+
+            //unload old
+
+            //unload old behind
+            if(currentTime > loadBehind) {
+                //console.log("currentTime - loadBehind");
+                //console.log(Math.floor(currentTime - loadBehind));
+                if(Math.floor(currentTime - loadBehind) > 0)
+                    srcBufferQueue.push([false, 0, (Math.floor(currentTime - loadBehind))]);
+            }
+
+            //unload old ahead
+            let p = [false, currentTime + (loadAhead * 2), videoElement.duration];
+            srcBufferQueue.push(p);
+
+        }
+    }, checkLoadIntervol);
+
+
+    function timeRangeToFrags(start, end){
+
+        //get start frag
+        let fragStartTime =  start - (start % fragInterval);
+        let startFrag = fragStartTime / fragInterval;
+
+
+        //get end frag
+        let fragEndTime = end - (end % fragInterval);
+        if (end % fragInterval !== 0){
+            fragEndTime = fragEndTime + fragInterval;
+        }
+        let endFrag = fragEndTime / fragInterval;
+
+        frags = [];
+        for(let i = startFrag; i < endFrag; i++){
+            frags.push(i);
+        }
+
+        return frags;
+    }
+
+    function addFragsToLoadedFrags(frags){
+        for(let i = 0; i < frags.length; i++){
+            loadedFrags.push(frags.at(i));
+        }
+    }
+
+
+
+</script>
+</html>

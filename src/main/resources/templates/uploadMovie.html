@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Movie</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+<div th:replace="topBar :: topBar"></div>
+<div class="uplaodMovie">
+
+    <table class="movieInputTable">
+
+        <!-- Display Media Thumbnail Preview -->
+        <div class="mediaUploadShowcase">
+            <div class="mediaUploadShowcaseDisplay">
+                <img src="thumbnail/1" alt="what" class="mediaDisplayImage" id="displayImage">
+                <h5 class="mediaDisplayText" id="mediaDisplayText">Movie Title</h5>
+            </div>
+        </div>
+
+
+        <!-- choose a movie video -->
+        <tr>
+            <td>
+                <h5>Choose a Movie Video</h5>
+            </td>
+            <td>
+                <div class="chooseVideoFileDiv">
+                    <input type="file" id="videoUpload" accept="video/mp4" onchange="checkVideoReady()">
+                </div>
+            </td>
+        </tr>
+
+        <!-- choose a movie Thumbnail -->
+        <tr>
+            <td>
+                <h5>Choose a movie thumbnail</h5>
+            </td>
+            <td>
+                <div class="chooseImageFileDiv">
+                    <input type="file" id="imageUpload" accept="image/png, image/jpeg" onchange="checkImageReady()">
+                </div>
+            </td>
+        </tr>
+
+        <!-- choose a Title -->
+        <tr>
+            <td>
+                <h5>Enter Movie Title</h5>
+            </td>
+            <td>
+                <div class="titleInputDiv">
+                    <!-- TODO make maxlength config dependant -->
+                    <input type="text" maxlength="50" minlength="1" id="title" onchange="checkTitleReady()">
+                </div>
+            </td>
+        </tr>
+
+        <!-- choose a Genre -->
+        <tr>
+            <td>
+                <h5>Choose Genre</h5>
+            </td>
+            <td>
+                <div class="genreInputDiv">
+                    <input id="genre" onchange="checkGenreReady()">
+                </div>
+            </td>
+        </tr>
+
+        <!-- Submit Button -->
+        <tr>
+            <td>
+            </td>
+            <td>
+                <input type="button" id="submit" disabled content="Submit">
+            </td>
+        </tr>
+    </table>
+</div>
+
+
+</body>
+<script th:inline="javascript">
+
+    const chunkSize = 8192; //TODO make config value
+    const MAX_IMAGE_SIZE = 400000000; //TODO make config value
+
+    //all upload elements
+    videoFileElement = document.getElementById("videoUpload");
+    imageFileElement = document.getElementById("imageUpload");
+    titleElement = document.getElementById("title");
+    genreElement = document.getElementById("genre");
+
+    //add event listeners
+    videoFileElement.addEventListener("change", checkVideoReady);
+    imageFileElement.addEventListener("change", checkImageReady);
+    titleElement.addEventListener("input", checkTitleReady);
+    genreElement.addEventListener("input", checkGenreReady);
+    document.getElementById("submit").addEventListener("click", submitVideo);
+
+
+    let videoFileReady = false;
+    let imageFileReady = false;
+    let titleReady = false;
+    let genreReady = false;
+    let submitted = false;
+
+    let videoFile = null;
+    let imageFile = null;
+    let title = null;
+    let genre = null;
+
+    function checkVideoReady(){
+
+        videoFile = videoFileElement.files[0];
+
+        //TODO video file check
+
+        videoFileReady = true;
+
+    }
+
+    function checkImageReady(){
+
+        imageFile = imageFileElement.files[0];
+        if(imageFile.size > MAX_IMAGE_SIZE){
+            //TODO Error
+            return;
+        }
+        document.getElementById("displayImage").src = imageBytesToURL(imageFile);
+        //console.log(imageFile);
+
+        imageFileReady = true;
+
+    }
+
+    function checkTitleReady(){
+
+        let tempTitle = titleElement.value;
+        document.getElementById("mediaDisplayText").textContent = tempTitle;
+
+        //TODO make maxlength config dependant
+        if(tempTitle.length >= 1 && tempTitle.length <= 50) {
+            title = tempTitle;
+            titleReady = true;
+        }
+        else
+            titleReady = false;
+    }
+
+    function checkGenreReady(){
+
+        genre = genreElement.value;
+        genreReady = true;
+    }
+
+
+    setInterval(function () {
+
+        if(videoFileReady && imageFileReady && titleReady && genreReady && !submitted){
+            document.getElementById("submit").disabled = false;
+        }
+        else if(videoFileReady && imageFileReady && titleReady && genreReady && submitted){
+            document.getElementById("submit").disabled = true;
+        }
+    }, 30);
+
+    console.log("here40");
+    
+    // ------------------------------------ send submission ---------------------------------------
+
+    async function submitVideo() {
+
+        console.log("wow0")
+        console.log(videoFile.size);
+
+        let promises = [];
+
+        //get values about data
+        const bytes = await fileToByteArray(videoFile);
+        const totalSize = bytes.length;
+        const chunks = Math.ceil(totalSize / chunkSize);
+        const lastChunkSize = totalSize % chunkSize;
+
+        //send create video //step 1
+        let fileId = await getFileUploadId(totalSize, chunks);
+
+        console.log(fileId);
+
+
+
+        //loop through chunks and create promise except last chunk
+        for(let i = 0; i < chunks - 1; i++){
+
+            console.log("i: " + i);
+            let p = new Promise(function (resolve, reject){
+                let outcome = uploadChunk(i, chunks, bytes.slice(chunkSize * i, (chunkSize * (i + 1))), fileId);
+                if(outcome[0]){
+                    resolve(outcome[1]);
+                }
+                else{
+                    reject(outcome[1]);
+                }
+            });
+            promises.push(p);
+        }
+
+        //do last chunk
+        let p = new Promise(function (resolve, reject){
+            let outcome = uploadChunk(chunks - 1, chunks, bytes.slice(chunkSize * (chunks - 1), (chunkSize * (chunks - 1)) + lastChunkSize), fileId);
+            if(outcome[0]){
+                resolve(outcome[1]);
+            }
+            else{
+                reject(outcome[1]);
+            }
+        });
+        promises.push(p);
+
+        await Promise.allSettled(promises);
+
+        //see if any errors
+        let error = false;
+        for(let i = 0; i < promises.length; i++){
+            promises[i].then(
+                function(val){ //success
+
+                },
+                function(val){ //error
+                    error = true;
+                }
+            );
+        }
+
+
+        if(!error){
+            console.log(sendFinalizeVideo(chunks, fileId));
+        }
+
+    }
+    
+
+    //step 1
+    async function getFileUploadId(totalsize, chunkCount){
+
+        let data = { totalSize: totalsize, chunkCount: chunkCount };
+
+        const response = await fetch("/uploadVideo", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        console.log("step 1");
+
+        if(response.ok){
+            return await response.text();
+        }
+        else{
+            //TODO Error
+        }
+
+        return -1;
+    }
+
+    //step 2
+    async function uploadChunk(i, totalChunks, bytes, fileid){
+
+        console.log(bytes);
+        console.log(bytes.length);
+
+        const response = await fetch("/uploadVideo/" + fileid, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream',
+                'x-chunk-number': i,
+                'x-total-chunk-count': totalChunks},
+            body: bytes
+        });
+
+        console.log("step 2.2: " + fileid);
+        console.log(response);
+
+        if(response.ok) {
+
+            //TODO update progress bar
+
+            return [true, i];
+        }
+        else{
+            return [false, i];
+        }
+
+    }
+
+    //step 3
+    async function sendFinalizeVideo(chunkCount, fileid){
+
+        const response = await fetch("/uploadVideo/" + fileid + "/finish/", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json',
+            'x-total-chunk-count': chunkCount},
+        });
+
+        console.log("step 3");
+        console.log(response);
+
+        return response;
+
+    }
+
+    //step 4
+    async function uploadMovie(vidId){
+
+        encodedImage = btoa(imageFile)
+
+        let data = { title: title, genre: genre, video: vidId, image: encodedImage};
+
+        const response = await fetch("/upload/movie", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        console.log(response);
+    }
+
+
+    //------------------------ helper functions ------------------------
+
+
+    function imageBytesToURL(bytes){
+        let imgBlob = new Blob([bytes], { type: 'image/jpeg'});
+        return URL.createObjectURL(imgBlob);
+    }
+
+    //TODO not yours
+    function bytesToBase64Bytes(bytes) {
+        const binString = Array.from(bytes, (byte) =>
+            String.fromCodePoint(byte),
+        ).join("");
+        return Array.from(btoa(binString), char => char.charCodeAt(0));
+    }
+
+    //TODO not yours
+    function fileToByteArray(file) {
+        return new Promise((resolve, reject) => {
+            var reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+
+            reader.onloadend = function (evt) {
+                if (evt.target.readyState === FileReader.DONE) {
+                    var arrayBuffer = evt.target.result;
+                    var uint8Array = new Uint8Array(arrayBuffer);
+                    resolve(uint8Array); // Return Uint8Array, not Array.from()
+                }
+            };
+
+            reader.onerror = function (evt) {
+                reject(evt.target.error);
+            };
+        });
+    }
+
+
+</script>
+</html>

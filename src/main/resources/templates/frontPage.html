@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <title>temp</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+
+
+</head>
+<body>
+    <div th:replace="topBar :: topBar"></div>
+    <div th:each="movieList, status : ${allMovieLists}">
+
+        <div class="listName">
+            <h5 th:text="${listNames[status.index]}" class="listName"></h5>
+        </div>
+
+        <div class="suggestionSlider">
+            <table>
+                <tr>
+                    <td th:each="movie : ${movieList}">
+                        <div class="mediaDisplayInTable">
+                            <a th:href="${'/movie/' + movie.id}" >
+                                <img th:src="${'/thumbnail/' + movie.thumbnail}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" id="displayImage">
+                                <h5 th:text="${movie.title}" class="mediaDisplayText"></h5>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <!-- <div style="display: block; height: 3vh;"></div> -->
+    </div>
+</body>
+
+
+<script th:inline="javascript">
+    let list = /*[[${allMovieLists}]]*/ [];
+    console.log(list);
+</script>
+
+
+</html>
