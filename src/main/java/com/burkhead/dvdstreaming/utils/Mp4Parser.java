@@ -48,7 +48,7 @@ public class Mp4Parser {
 
 
         try{
-            String filePath = outFolderPath + "/ftypmoov" + ".init";
+            String filePath = outFolderPath + "/ftypmoov.init";
 
             //create file
             File fragFile = new File(filePath);
@@ -124,16 +124,17 @@ public class Mp4Parser {
                 byte[] sizeBytes = new byte[4];
                 System.arraycopy(f.readNBytes(4), 0, sizeBytes, 0, 4);
                 int boxSize = ByteBuffer.wrap(sizeBytes).getInt();
+                //System.out.println(boxSize);
 
                 byte[] typeBytes = new byte[4];
                 System.arraycopy(f.readNBytes(4), 0, typeBytes, 0, 4);
                 String type = new String(typeBytes);
-                System.out.println(type);
+                //System.out.println(type);
 
 
                 if (type.equals("moof")) {
 
-                    System.out.println("here1");
+                    //System.out.println("here1");
                     currentMoof = new byte[boxSize];
                     System.arraycopy(f.readNBytes(boxSize - 8), 0, currentMoof, 8, boxSize - 8);
                     System.arraycopy(sizeBytes, 0, currentMoof, 0, 4);
@@ -141,7 +142,7 @@ public class Mp4Parser {
 
                 } else if (type.equals("mdat") && currentMoof.length != 0) {
 
-                    System.out.println("here2");
+                    //System.out.println("here2");
 
                     byte[] currentMdat = new byte[boxSize];
                     System.arraycopy(f.readNBytes(boxSize - 8), 0, currentMdat, 8, boxSize - 8);
@@ -154,6 +155,8 @@ public class Mp4Parser {
 
                 } else if (type.equals("mdat") && currentMoof.length == 0) {
                     //TODO: warning
+                }else if(type.equals("mfra")){
+                    break;
                 }
 
             }

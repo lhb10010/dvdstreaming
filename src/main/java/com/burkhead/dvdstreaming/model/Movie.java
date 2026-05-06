@@ -27,8 +27,8 @@ public class Movie implements Media {
     private Video movieVideo;
 
     @JsonIgnore
-    @OneToOne(fetch = FetchType.EAGER)
-    private MediaThumbnail thumbnail;
+    @Column(columnDefinition = "MEDIUMBLOB")
+    private byte[] thumbnail;
 
 
     // ----------------------------- Constructors -------------------------------
@@ -41,13 +41,13 @@ public class Movie implements Media {
 
         this.title = title;
         this.genre = genre;
-        this.thumbnail = new MediaThumbnail(image);
+        this.thumbnail = image;
         this.movieVideo = video;
 
     }
 
     //used by csv import
-    public Movie(String title, String genre, long lastTimeWatched, long lastTimeWatchedPos, MediaThumbnail thumbnail, Video vid) throws IOException {
+    public Movie(String title, String genre, long lastTimeWatched, long lastTimeWatchedPos, byte[] thumbnail, Video vid) throws IOException {
         this.title = title;
         this.genre = genre;
         this.lastTimeWatched = lastTimeWatched;
@@ -76,13 +76,8 @@ public class Movie implements Media {
     }
 
     @JsonIgnore
-    public MediaThumbnail getThumbnail(){
+    public byte[] getThumbnail(){
         return this.thumbnail;
-    }
-
-    @JsonGetter("thumbnail")
-    public long getThumbnailId(){
-        return this.thumbnail.getId();
     }
 
     @JsonGetter("video")

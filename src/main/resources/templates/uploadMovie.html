@@ -236,8 +236,11 @@
 
 
         if(!error){
-            console.log(sendFinalizeVideo(chunks, fileId));
+            const vidId = await sendFinalizeVideo(chunks, fileId);
+            await uploadMovie(vidId);
         }
+
+
 
     }
     
@@ -306,7 +309,7 @@
         console.log("step 3");
         console.log(response);
 
-        return response;
+        return await response.text();
 
     }
 

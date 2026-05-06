@@ -6,7 +6,7 @@
     <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 <body>
-<div th:include="topBar :: content"></div>
+<div th:replace="topBar :: topBar"></div>
 
 <!-- Video Section -->
 <div class="videoPlayerDiv">
@@ -47,6 +47,8 @@
     //temp
     let loadedFrags = [];
 
+    console.log(5);
+
 
     //setup small helper functions
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -78,7 +80,7 @@
 
 
             //ready for fragments
-            scrBufferQueueProcessing();
+            //scrBufferQueueProcessing();
             initDone = true;
             console.log("init");
             srcBuffer.addEventListener('error', (event) => {
@@ -119,39 +121,32 @@
     //src buffer queue -------------------------------------------------------------------------------
 
     //TODO make interval for better error recovery
-    async function scrBufferQueueProcessing(){
+    setInterval(function () {
 
-        let i = 0;
-
-        while(true){
+        if(initDone) {
 
             srcBuffer.addEventListener("error", (e) => {
                 console.error("Error appending buffer:", e);
 
             });
 
-            if(srcBufferQueue.length < 1){
-                await sleep(checkSrcBufferQueue);
-            }
-            else if(srcBuffer.updating === true){
-                await sleep(10);
-            }
-            else{
+            if (srcBufferQueue.length < 1) {
+
+            } else if (srcBuffer.updating === true) {
+
+            } else {
 
                 console.log(srcBufferQueue);
-                if(srcBufferQueue.at(0).at(0)){
+                if (srcBufferQueue.at(0).at(0)) {
                     srcBuffer.appendBuffer(srcBufferQueue.at(0).at(1));
                     console.log(srcBufferQueue.at(0).at(2))
-                    while(srcBuffer.updating){
-                        await sleep(5);
-                    }
-                }
-                else{
-                    srcBuffer.remove(srcBufferQueue.at(0).at(1), srcBufferQueue.at(0).at(2));
-                }
 
+                } else {
+                    //srcBuffer.remove(srcBufferQueue.at(0).at(1), srcBufferQueue.at(0).at(2));
+                }
+                loadedFrags.push(srcBufferQueue.at(0).at(2));
                 //remove element from queue
-                if(srcBufferQueue.length > 1){
+                if (srcBufferQueue.length > 1) {
                     srcBufferQueue.shift();
                     /*
                     if(srcBufferQueue.length > maxQueueLen){
@@ -159,18 +154,16 @@
                     }
                     */
 
-                }
-                else{
+                } else {
                     srcBufferQueue = [];
                 }
 
                 //logging
                 console.log("src Buffer queue");
                 console.log(srcBufferQueue);
-                i++;
             }
         }
-    }
+    }, 10);
 
 
     //load Fragments ----------------------------------------------------------------------------------------------
@@ -225,12 +218,14 @@
 
 
 
+    /*
     //periodically load and unload video
     //TODO timeout
     setInterval(function () {
         if(initDone){
             let ranges = videoElement.buffered;
             let currentTime = videoElement.currentTime;
+
 
 
             //loaded frags
@@ -254,8 +249,13 @@
                     }
                 }
             }
+
+
             console.log("loadedFrags")
             console.log(loadedFrags);
+            //loadedFrags = [];
+
+            let currentLoaded = false;
             if(!currentLoaded){
                 loadTime(currentTime, currentTime + loadAhead);
             }
@@ -283,6 +283,31 @@
         }
     }, checkLoadIntervol);
 
+
+    */
+
+    setInterval(function () {
+
+        let i = 0;
+        while(true){
+            let isin = false;
+            for(let j = 0; j < loadedFrags.length; j++){
+                if(i === j){
+                    isin = true;
+                    break;
+                }
+            }
+            if(isin){
+                i++;
+            }
+            else{
+                break;
+            }
+        }
+        getFragFromServer(i);
+
+
+    }, checkLoadIntervol);
 
     function timeRangeToFrags(start, end){
 

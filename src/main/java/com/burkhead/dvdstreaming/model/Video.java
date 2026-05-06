@@ -155,7 +155,7 @@ public User createUser(String name) {
         catch (IOException e){
             //TODO error
         }
-
+        System.out.println("\n\n\n\n\n\n\n\n");
 
     }
 
@@ -183,7 +183,7 @@ public User createUser(String name) {
     public byte[] getInitData(){
 
         try {
-            Path initFilePath = Paths.get("src/main/resources/videoFiles/" + this.id + "/" + this.id + ".init");
+            Path initFilePath = Paths.get("src/main/resources/videoFiles/" + this.id + "/ftypmoov.init");
             return Files.readAllBytes(initFilePath);
         }
         catch(IOException e){

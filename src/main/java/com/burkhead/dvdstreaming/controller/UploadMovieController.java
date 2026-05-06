@@ -2,6 +2,7 @@ package com.burkhead.dvdstreaming.controller;
 
 import com.burkhead.dvdstreaming.model.Movie;
 import com.burkhead.dvdstreaming.model.Video;
+import com.burkhead.dvdstreaming.repository.MovieRepository;
 import com.burkhead.dvdstreaming.repository.VideoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,11 @@ public class UploadMovieController {
 
     final int MAX_TITLE_LENGTH = 50; //TODO make this a config
     private final VideoRepository videoRepository;
+    private final MovieRepository movieRepository;
 
-    public UploadMovieController(VideoRepository videoRepository) {
+    public UploadMovieController(VideoRepository videoRepository, MovieRepository movieRepository) {
         this.videoRepository = videoRepository;
+        this.movieRepository = movieRepository;
     }
 
     @GetMapping("/uploadMovie")
@@ -65,6 +68,8 @@ public class UploadMovieController {
 
         //create new movie object
         Movie m = new Movie(title, genre, decodedImage, v);
+
+        movieRepository.save(m);
 
         String data = String.valueOf(m.getId());
         return ResponseEntity.status(HttpStatus.OK)

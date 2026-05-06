@@ -24,7 +24,7 @@
                     <td th:each="movie : ${movieList}">
                         <div class="mediaDisplayInTable">
                             <a th:href="${'/movie/' + movie.id}" >
-                                <img th:src="${'/thumbnail/' + movie.thumbnail}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" id="displayImage">
+                                <img th:src="${movie.thumbnail}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" id="displayImage">
                                 <h5 th:text="${movie.title}" class="mediaDisplayText"></h5>
                             </a>
                         </div>

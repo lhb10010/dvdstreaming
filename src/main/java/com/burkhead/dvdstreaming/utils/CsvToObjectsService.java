@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -28,7 +30,6 @@ public class CsvToObjectsService {
 
     private final MovieRepository movieRepository;
 
-    private final MediaThumbnailRepository mediaThumbnailRepository;
 
     public ArrayList<Video> csvToVideoObjects(String csvPath){
 
@@ -62,10 +63,16 @@ public class CsvToObjectsService {
                 String line = s.nextLine();
                 String[] values = line.split(",");
 
-                MediaThumbnail tn = new MediaThumbnail(values[4]);
-                mediaThumbnailRepository.save(tn);
+                byte[] imageData = new byte[0];
+                try {
+                    System.out.println(values[4]);
+                    imageData = Files.readAllBytes(Path.of(values[4]));
+                }
+                catch(IOException e){
 
-                Movie v = new Movie(values[0], values[1], Long.parseLong(values[2]), Long.parseLong(values[3]), tn, videoRepository.getReferenceById(Long.parseLong(values[5])));
+                }
+
+                Movie v = new Movie(values[0], values[1], Long.parseLong(values[2]), Long.parseLong(values[3]), imageData, videoRepository.getReferenceById(Long.parseLong(values[5])));
                 movieArray.add(v);
             }
         }
@@ -141,13 +148,12 @@ public class CsvToObjectsService {
 
     //constructor
 
-    public CsvToObjectsService(VideoRepository videoRepository, TvSeriesRepository tvSeriesRepository, TvSeasonRepository tvSeasonRepository, TvEpisodeRepository tvEpisodeRepository, MovieRepository movieRepository, MediaThumbnailRepository mediaThumbnailRepository){
+    public CsvToObjectsService(VideoRepository videoRepository, TvSeriesRepository tvSeriesRepository, TvSeasonRepository tvSeasonRepository, TvEpisodeRepository tvEpisodeRepository, MovieRepository movieRepository){
         this.videoRepository = videoRepository;
         this.tvSeriesRepository = tvSeriesRepository;
         this.tvSeasonRepository = tvSeasonRepository;
         this.tvEpisodeRepository = tvEpisodeRepository;
         this.movieRepository = movieRepository;
-        this.mediaThumbnailRepository = mediaThumbnailRepository;
     }
 
     //on start
