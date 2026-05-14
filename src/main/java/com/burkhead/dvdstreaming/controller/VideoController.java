@@ -23,35 +23,37 @@ public class VideoController {
         this.videoRepository = videoRepository;
     }
 
-    @PostMapping(value = "/video/{vidid}")
-    public ResponseEntity<byte[]> partialVideoRequest(@PathVariable long vidid, @RequestBody JsonNode json){
+    @PostMapping(value = "/video/{vidid}/getInitData")
+    public ResponseEntity<byte[]> videoInitData(@PathVariable long vidid){
 
 
-        String target = json.get("target").asString();
         Video vid = videoRepository.findVideoById(vidid);
-        byte[] data = new byte[0];
-
-        if(target.equals("moov")){
-            data = vid.getInitData();
-        }
-
-        else if(target.equals("frag")){
-
-            int num = json.get("num").asInt();
-            data = vid.getFragment(num);
-
-        }
-
-        //System.out.println(fragCount);
-        //System.out.println(Arrays.toString(data));
+        byte[] data = vid.getInitData();
 
         //create and send response
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+        return ResponseEntity.status(HttpStatus.OK)
                 .header("Content-Type", "video/mp4")
                 .header("Accept-Ranges", "bytes")
                 .header("Content-Length", String.valueOf(data.length))
                 .body(data);
 
+    }
+
+
+    @PostMapping(value = "/video/{vidid}/getChunk")
+    public ResponseEntity<byte[]> videoChunkData(@PathVariable long vidid, @RequestBody JsonNode json){
+
+
+        //TODO check for num
+        Video vid = videoRepository.findVideoById(vidid);
+        int num = json.get("num").asInt();
+        byte[] data = vid.getFragment(num);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Content-Type", "video/mp4")
+                .header("Accept-Ranges", "bytes")
+                .header("Content-Length", String.valueOf(data.length))
+                .body(data);
 
     }
 

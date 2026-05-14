@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 
 import java.io.IOException;
+import java.util.Base64;
 
 @Entity
 public class Movie implements Media {
@@ -43,6 +44,8 @@ public class Movie implements Media {
         this.genre = genre;
         this.thumbnail = image;
         this.movieVideo = video;
+        this.lastTimeWatchedPos = 0;
+        this.lastTimeWatched = -1;
 
     }
 
@@ -51,13 +54,15 @@ public class Movie implements Media {
         this.title = title;
         this.genre = genre;
         this.lastTimeWatched = lastTimeWatched;
-        this.lastTimeWatchedPos = lastTimeWatchedPos;
+        this.lastTimeWatchedPos = 0;
         this.movieVideo = vid;
         this.thumbnail = thumbnail;
 
     }
 
-    //getters
+
+    // ------------------------------------------- getters -------------------------------------------
+
 
     public Long getId() {
         return id;
@@ -71,6 +76,10 @@ public class Movie implements Media {
         return this.lastTimeWatched;
     }
 
+    public long getLastTimeWatchedPos(){
+        return this.lastTimeWatchedPos;
+    }
+
     public String getGenre(){
         return this.genre;
     }
@@ -80,15 +89,27 @@ public class Movie implements Media {
         return this.thumbnail;
     }
 
+    @JsonGetter("thumbnail")
+    public String getB64Thumbnail(){
+        return Base64.getEncoder().encodeToString(this.thumbnail);
+    }
+
     @JsonGetter("video")
     public long getVideoId(){
         return this.movieVideo.getId();
     }
 
-    //setters
+
+    // ------------------------------------------- setters -------------------------------------------
+
 
     public void setGenre(String genre){
         this.genre = genre;
     }
 
+    public void setLastTimeWatchedPos(long timeWatched){
+        if(timeWatched > 0){
+            this.lastTimeWatchedPos = timeWatched;
+        }
+    }
 }

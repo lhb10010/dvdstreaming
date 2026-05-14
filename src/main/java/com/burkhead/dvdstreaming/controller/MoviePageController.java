@@ -4,10 +4,13 @@ import com.burkhead.dvdstreaming.model.Movie;
 import com.burkhead.dvdstreaming.repository.MovieRepository;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
+import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
 
@@ -29,6 +32,25 @@ public class MoviePageController {
         model.addAttribute("movie", targetMovie);
 
         return "moviePage";
+    }
+
+//@PostMapping(consumes = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(path = "/movie/{movie}/watchTime")
+    public ResponseEntity<String> updateWatchTime(@RequestBody JsonNode json, @PathVariable long movie){
+
+
+        //TODO check for elapsed
+        long num = json.get("elapsed").asLong();
+        Movie m = movieRepository.findMovieById(movie);
+        m.setLastTimeWatchedPos(num);
+        movieRepository.save(m);
+
+        String data = "OK";
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .header("Content-Length", String.valueOf(data.length()))
+                .body(data);
+
     }
 
 
