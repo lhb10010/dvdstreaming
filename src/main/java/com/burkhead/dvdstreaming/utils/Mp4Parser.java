@@ -8,6 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import static java.lang.System.exit;
 
 
 //strip all other data: ffmpeg -i videoplayback.mp4 -map_metadata -1 -c:v copy -c:a copy -sn output.mp4
@@ -28,6 +31,7 @@ public class Mp4Parser {
 
         //get data from file
         byte[] initData = new byte[0];
+        byte[] mapData = new byte[0];
         ArrayList<byte[]> frags = new ArrayList<>();
         try {
             File f = new File(ogPath);
@@ -35,6 +39,9 @@ public class Mp4Parser {
 
             //parse init data
             initData = getInitData(inp);
+
+            //parse sdix data
+            mapData = getMapData(inp);
 
             //parse fragments
             frags = getAllFragments(inp);
@@ -47,6 +54,7 @@ public class Mp4Parser {
         System.out.println(frags.size());
 
 
+        //save init file
         try{
             String filePath = outFolderPath + "/ftypmoov.init";
 
@@ -65,6 +73,26 @@ public class Mp4Parser {
         }
 
 
+        //save map file
+        try{
+            String filePath = outFolderPath + "/map.init";
+
+            //create file
+            File fragFile = new File(filePath);
+            if (!fragFile.createNewFile()) {
+                throw new IOException();
+            }
+
+            //write data to file
+            Path fragFileWrite = Paths.get(filePath);
+            Files.write(fragFileWrite, mapData);
+        }
+        catch(IOException e){
+            return false;
+        }
+
+
+        //save fragments
         int i = 0;
         for(byte[] frag : frags){
             if(!writeFragFile(i, frag, outFolderPath)){
@@ -78,12 +106,20 @@ public class Mp4Parser {
 
     }
 
+    private static byte[] getMapData(FileInputStream f) {
+        byte[] sidx1 = parseInputStreamForTopLevelBox(f, "sidx");
+        byte[] sidx2 = parseInputStreamForTopLevelBox(f, "sidx");
+
+        return combineBytes(sidx1, sidx2);
+    }
+
 
     private static byte[] getInitData(FileInputStream f){
 
         //get init boxes
         byte[] ftyp = parseInputStreamForTopLevelBox(f, "ftyp");
         byte[] moov = parseInputStreamForTopLevelBox(f, "moov");
+
         return combineBytes(ftyp, moov);
 
     }
@@ -92,7 +128,7 @@ public class Mp4Parser {
     public static boolean writeFragFile(int num, byte[] data, String outFolderPath){
         try{
             String filePath = outFolderPath + num + ".frag";
-            System.out.println("frag: " + filePath);
+            //System.out.println("frag: " + filePath);
 
             //create file
             File fragFile = new File(filePath);
@@ -116,6 +152,8 @@ public class Mp4Parser {
 
         ArrayList<byte[]> fragments = new ArrayList<>();
         byte[] currentMoof = new byte[0];
+        //byte[] sidx1 = new byte[0];
+        //byte[] sidx2 = new byte[0];
 
         try {
 
@@ -149,12 +187,17 @@ public class Mp4Parser {
                     System.arraycopy(sizeBytes, 0, currentMdat, 0, 4);
                     System.arraycopy(typeBytes, 0, currentMdat, 4, 4);
 
-                    byte[] combined = combineBytes(currentMoof, currentMdat);
-                    fragments.add(combined);
+                   // byte[] combined1 = combineBytes(sidx1, sidx2);
+                    byte[] combined2 = combineBytes(currentMoof, currentMdat);
+                    //byte[] combined = combineBytes(combined1, combined2);
+                    fragments.add(combined2);
                     currentMoof = new byte[0];
+                    //sidx1 = new byte[0];
+                    //sidx2 = new byte[0];
 
                 } else if (type.equals("mdat") && currentMoof.length == 0) {
                     //TODO: warning
+                    //TODO: handle missing sidx too
                 }else if(type.equals("mfra")){
                     break;
                 }
@@ -189,6 +232,7 @@ public class Mp4Parser {
 
     public static byte[] parseForDataForTopLevelBox(byte[] data, String target){
 
+
         int pos = 0;
         while(pos < data.length){
 
@@ -199,6 +243,7 @@ public class Mp4Parser {
             byte[] typeBytes = new byte[4];
             System.arraycopy(data, pos + 4, typeBytes, 0, 4);
             String type = new String(typeBytes);
+            //System.out.println(type);
 
             if(type.equals(target)){
                 byte[] targetData = new byte[boxSize];
@@ -224,14 +269,17 @@ public class Mp4Parser {
                 byte[] sizeBytes = new byte[4];
                 System.arraycopy(f.readNBytes(4), 0, sizeBytes, 0, 4);
                 int boxSize = ByteBuffer.wrap(sizeBytes).getInt();
+                //System.out.println(boxSize);
 
                 byte[] typeBytes = new byte[4];
                 System.arraycopy(f.readNBytes(4), 0, typeBytes, 0, 4);
                 String type = new String(typeBytes);
+                //System.out.println(type);
 
                 if (type.equals(target)) {
                     byte[] targetData = new byte[boxSize];
                     System.arraycopy(f.readNBytes(boxSize - 8), 0, targetData, 8, boxSize - 8);
+                    //System.out.println(Arrays.toString(targetData));
                     System.arraycopy(sizeBytes, 0, targetData, 0, 4);
                     System.arraycopy(typeBytes, 0, targetData, 4, 4);
                     return targetData;

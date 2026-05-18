@@ -21,7 +21,7 @@
 
 </body>
 <script th:inline="javascript">
-    console.log("23");
+    console.log("56");
 </script>
 <script th:inline="javascript">
 
@@ -29,7 +29,7 @@
     //temp
     let movie = /*[[${movie}]]*/ [];
     console.log(movie);
-    console.log(movie.video);
+    console.log(movie.movieVideo);
     let fragTime = 2000; //millis
     let LOAD_BEHIND = 30; //seconds
     let LOAD_AHEAD = 30; //seconds
@@ -41,10 +41,12 @@
 
     let videoElement = document.getElementById("mainVideo");
     let srcBuffer = null;
+    let mediaPlayer = null;
     let loadedFrags = [];
     let bufferQueue = []
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     let fragmentReady = false;
+    let appliedStartingPos = false;
 
 
     // ------------------------------------ Main ------------------------------------
@@ -58,13 +60,13 @@
         }
 
         await setupPlayer();
+        await waitForSrcBuffer()
         await getInitData();
+        await waitForSrcBuffer();
+        mediaPlayer.setLiveSeekableRange(0, movie.movieVideo.durationMillis / 1000);
         fragmentReady = true;
         processQueue();
     }
-    //set playback time
-    videoElement.currentTime = movie.lastTimeWatchedPos;
-
 
     // ----------------------------- Setup Video Player -----------------------------
 
@@ -72,11 +74,12 @@
     async function setupPlayer(){
 
         //create media source
-        let mediaPlayer = new MediaSource();
+        mediaPlayer = new MediaSource();
         videoElement.src = URL.createObjectURL(mediaPlayer);
         let srcBufferReady = false;
         mediaPlayer.addEventListener('sourceopen', function (){
 
+            mediaPlayer.duration = movie.movieVideo.durationMillis / 1000;
             let mime = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
             srcBuffer = mediaPlayer.addSourceBuffer(mime);
             srcBuffer.mode = "segments";
@@ -94,20 +97,36 @@
 
     async function getInitData(){
         await waitForSrcBuffer();
-        await fetch("/video/" + movie.video + "/getInitData", {
+        await fetch("/video/" + movie.movieVideo.id + "/getInitData", {
             method: 'POST',
         }).then(response => response.arrayBuffer()).then(buffer => {
+            srcBuffer.appendBuffer(buffer);
+        });
+        await waitForSrcBuffer();
+        await fetch("/video/" + movie.movieVideo.id + "/getMapData", {
+            method: 'POST',
+        }).then(response => response.arrayBuffer()).then(buffer => {
+            console.log(buffer);
             srcBuffer.appendBuffer(buffer);
         });
     }
 
 
     // ------------------------------- Get Fragments -------------------------------
-
+    let tempLoadedEnd = false;
 
     setInterval(async function(){
 
+
+        if(!appliedStartingPos && fragmentReady && tempLoadedEnd){
+            //console.log("applying start time " + movie.lastTimeWatchedPos);
+            videoElement.currentTime = movie.lastTimeWatchedPos;
+        }
+        if(!appliedStartingPos && Math.floor(videoElement.currentTime) === movie.lastTimeWatchedPos && tempLoadedEnd){
+            appliedStartingPos = true;
+        }
         if(fragmentReady) {
+
 
             let fragmentLoadBehind = Math.ceil((LOAD_BEHIND * 1000) / fragTime);
             let fragmentLoadAhead = Math.ceil((LOAD_AHEAD * 1000) / fragTime);
@@ -116,18 +135,16 @@
             let loadFragmentHigh = fragmentPos + fragmentLoadAhead;
 
             let unloadFragmentLow = Math.max(fragmentPos - (fragmentLoadBehind * 2), 0);
-            //removeFragmentsFromLoadedFrags(unloadFragmentLow);
+            removeFragmentsFromLoadedFrags(unloadFragmentLow);
 
             for (let i = loadFragmentLow; i < loadFragmentHigh; i++) {
 
                 if (!checkIfFragmentLoaded(i) && !checkIfFragmentInQueue(i)) {
 
-                    console.log("here3");
                     getFragFromServer(i);
 
                 }
             }
-
 
         }
 
@@ -142,7 +159,7 @@
         let data = { num: fragNum };
 
         //create request
-        const response = await fetch("/video/" + movie.video + "/getChunk", {
+        const response = await fetch("/video/" + movie.movieVideo.id + "/getChunk", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -150,6 +167,7 @@
 
         bufferQueue.push([fragNum, await response.arrayBuffer()]);
         console.log("applied chunk " + fragNum);
+        console.log(srcBuffer.duration);
 
     }
 
@@ -163,23 +181,24 @@
         while(true){
             try{
 
-                //wait for src buffer to be ready
-                await waitForSrcBuffer();
-
-                if(bufferQueue.length !== 0){
-
-                    srcBuffer.appendBuffer(bufferQueue.at(0).at(1));
-                    loadedFrags.push(bufferQueue.at(0).at(0));
-                    bufferQueue.shift();
+                    //wait for src buffer to be ready
                     await waitForSrcBuffer();
 
-                    let unloadBefore = Math.max(videoElement.currentTime - (LOAD_BEHIND * 2));
-                    //if(unloadBefore > 0)
-                        //srcBuffer.remove(0, unloadBefore);
-                }
-                else{
-                    await sleep(20);
-                }
+                    if (bufferQueue.length !== 0) {
+
+                        srcBuffer.appendBuffer(bufferQueue.at(0).at(1));
+                        loadedFrags.push(bufferQueue.at(0).at(0));
+                        bufferQueue.shift();
+                        await waitForSrcBuffer();
+
+                        let unloadBefore = Math.max(videoElement.currentTime - (LOAD_BEHIND * 2));
+                        if (unloadBefore > 0) {
+                            //console.log("unload 0 to " + unloadBefore);
+                            srcBuffer.remove(0, unloadBefore);
+                        }
+                    } else {
+                        await sleep(20);
+                    }
 
             }
 
@@ -202,7 +221,7 @@
         if(fragmentReady) {
 
             //create request
-            await fetch("/movie/" + movie.id + "/watchTime", {
+            await fetch("/movie/" + movie.movieVideo.id + "/watchTime", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -255,7 +274,7 @@
 
         let loadedFragsTemp = []
 
-        for(let i = 0; i < loadedFrags; i++){
+        for(let i = 0; i < loadedFrags.length; i++){
             if(loadedFrags.at(i) > max){
                 loadedFragsTemp.push(loadedFrags.at(i))
             }

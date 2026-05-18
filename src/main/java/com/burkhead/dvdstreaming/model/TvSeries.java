@@ -32,6 +32,7 @@ public class TvSeries implements Media {
     private String genre;
 
     //thumbnail
+    private byte[] thumbnail;
 
     //constructor
 

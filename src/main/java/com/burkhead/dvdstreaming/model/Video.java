@@ -8,10 +8,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Comparator;
 
 @Entity
@@ -27,9 +29,9 @@ public class Video {
 
     private long bytesLength;
 
-    private long timeLength;
-
     private int fragLength; //fragment length in milliseconds
+
+    private long durationMillis;
 
 
     // ------------------------------------------ Constructors -----------------------------------------------
@@ -43,6 +45,8 @@ public class Video {
         System.out.println(v.id);
         v.fragLength = p.getFragTime();
         v.createVideoDir();
+
+        v.durationMillis = v.calcDurationOfMp4(p.getFinalVideoPath());
 
         File f = new File(p.getFinalVideoPath());
         if(f.exists()){
@@ -162,7 +166,6 @@ public User createUser(String name) {
     public Video(String path, long byteLen, long timeLen){
         this.videoFolderPath = path;
         this.bytesLength = byteLen;
-        this.timeLength = timeLen;
     }
 
 
@@ -175,6 +178,10 @@ public User createUser(String name) {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getDurationMillis(){
+        return this.durationMillis;
     }
 
 
@@ -208,13 +215,32 @@ public User createUser(String name) {
         return new byte[0];
     }
 
+
+    //sdixs
+    @JsonIgnore
+    public byte[] getMapData(){
+
+        try {
+            Path initFilePath = Paths.get("src/main/resources/videoFiles/" + this.id + "/map.init");
+            return Files.readAllBytes(initFilePath);
+        }
+        catch(IOException e){
+            //TODO error
+        }
+
+        return new byte[0];
+    }
+
+
     // ------------------------------------------ ToString Override -----------------------------------------------
 
-
+    /*
     @Override
     public String toString() {
         return String.valueOf(this.id);
     }
+
+     */
 
 
     //TODO make real
@@ -243,10 +269,47 @@ public User createUser(String name) {
     }
 
 
-    long getVideoTimeLength(String vidPath){
 
-        //TODO make real
-        return 1000000;
+    private long calcDurationOfMp4(String path){
+
+        String command = "ffmpeg -i " + path + " 2>&1 | grep Duration: | awk '{print $2}'";
+
+        try {
+
+            ProcessBuilder ffmpegProcess = new ProcessBuilder("sh", "-c", command);
+            Process p = ffmpegProcess.start();
+            while(p.isAlive()){
+
+            }
+            if(p.exitValue() != 0){
+                System.out.println("returned " + p.exitValue());
+                return -1;
+            }
+
+            long millis = 0L;
+            String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            out = out.replace(",", "");
+            System.out.println(out);
+            String[] split1 = out.split("\\.");
+            if(split1.length != 2)
+                return -1;
+            String[] split2 = split1[0].split(":");
+            if(split2.length != 3)
+                return -1;
+            
+            millis += (60 * 60 * 1000 * Long.parseLong(split2[0]));
+            millis += (60 * 1000 * Long.parseLong(split2[1]));
+            millis += (1000 * Long.parseLong(split2[2]));
+            millis += Long.parseLong(split1[1].replace("\n", ""));
+            
+            return millis;
+
+        }
+        catch (Exception e){
+            System.out.println("calc err 1");
+            System.out.println(e.fillInStackTrace());
+            return -1;
+        }
 
     }
 

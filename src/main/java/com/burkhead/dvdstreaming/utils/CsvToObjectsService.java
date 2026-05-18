@@ -157,7 +157,7 @@ public class CsvToObjectsService {
     }
 
     //on start
-
+    /*
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void injectDatabaseTestData(){
@@ -169,6 +169,8 @@ public class CsvToObjectsService {
         tvEpisodeRepository.saveAll(csvToEpisodeObjects("src/main/resources/dummyData/dataCsvs/episode.csv"));
 
     }
+    */
+
 
     //userRepository.saveAll(users);
 

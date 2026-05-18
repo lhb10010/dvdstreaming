@@ -5,6 +5,7 @@ public interface Media {
 
     public String getTitle();
     public long getLastTimeWatched();
-    //thumbnail
+    //public byte[] getThumbnail();
+    //public String getThumbnailB64();
 
 }

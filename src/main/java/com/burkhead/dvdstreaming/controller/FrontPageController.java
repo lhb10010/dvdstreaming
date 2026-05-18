@@ -14,7 +14,7 @@ import java.util.ArrayList;
 @Controller
 public class FrontPageController {
 
-    private static int n = 10;
+    private static final int n = 10;
 
     private final MovieRepository movies;
 
@@ -49,7 +49,7 @@ public class FrontPageController {
         }
 
         ArrayList<ArrayList<Movie>> allMovieLists = new ArrayList<>(genresPicks);
-        //allMovieLists.add(lastTimeWatchedDescending);
+        allMovieLists.add(lastTimeWatchedDescending);
         allMovieLists.add(lastTimeWatchedFinal);
 
         ArrayList<String> listNames = new ArrayList<>();

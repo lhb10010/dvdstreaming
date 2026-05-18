@@ -94,11 +94,14 @@ public class Movie implements Media {
         return Base64.getEncoder().encodeToString(this.thumbnail);
     }
 
-    @JsonGetter("video")
-    public long getVideoId(){
-        return this.movieVideo.getId();
+    //@JsonGetter("video")
+    //public long getVideoId(){
+    //return this.movieVideo.getId();
+    //}
+    @JsonGetter("movieVideo")
+    public Video getMovieVideo(){
+        return this.movieVideo;
     }
-
 
     // ------------------------------------------- setters -------------------------------------------
 

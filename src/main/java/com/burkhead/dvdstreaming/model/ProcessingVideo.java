@@ -206,9 +206,12 @@ public class ProcessingVideo {
 
         System.out.println("Strating ffmpeg");
 
-        String command = "ffmpeg -i " + inputVidPath + " -c copy -map 0 -movflags " +
-                "+frag_keyframe+empty_moov+default_base_moof -frag_duration " + fragLenMilliseconds +
-                "000 -f mp4 " + outPath; //TODO make config
+        //ffmpeg -i input.mp4 -c:v libx264 -c:a aac -g 60 -keyint_min 60 -sc_threshold 0 -movflags frag_keyframe+dash+delay_moov+global_sidx+default_base_moof x264opts "keyint=48:min-keyint=48:no-scenecut" -f mp4 output.mp4
+        //ffmpeg -i input.mp4 -c:v libx264 -c:a aac -g 60 -keyint_min 60 -sc_threshold 0 -movflags frag_keyframe+dash+delay_moov+global_sidx+default_base_moof -x264opts "keyint=48:min-keyint=48:no-scenecut" -f mp4 output.mp4
+
+        String command = "ffmpeg -i " + inputVidPath +" -c:v libx264 -c:a aac -g 60 -keyint_min 60 -sc_threshold 0 -movflags " +
+                "frag_keyframe+empty_moov+default_base_moof+global_sidx+omit_tfhd_offset -x264opts " +
+                "\"keyint=60:min-keyint=60:no-scenecut\" -frag_duration 2000000 -f mp4 " + outPath; //TODO make config
 
 
         try {
@@ -219,6 +222,7 @@ public class ProcessingVideo {
 
             }
             if(p.exitValue() != 0){
+                System.out.println("returned " + p.exitValue());
                 return false;
             }
 

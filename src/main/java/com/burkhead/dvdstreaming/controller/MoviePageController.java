@@ -27,8 +27,6 @@ public class MoviePageController {
     public String frontPage(Model model, @PathVariable long movie) {
 
         Movie targetMovie = movieRepository.findMovieById(movie);
-        System.out.println(targetMovie.getGenre());
-        System.out.println(targetMovie.getVideoId());
         model.addAttribute("movie", targetMovie);
 
         return "moviePage";

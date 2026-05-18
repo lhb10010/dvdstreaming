@@ -40,6 +40,23 @@ public class VideoController {
     }
 
 
+    @PostMapping(value = "/video/{vidid}/getMapData")
+    public ResponseEntity<byte[]> videoMapData(@PathVariable long vidid){
+
+
+        Video vid = videoRepository.findVideoById(vidid);
+        byte[] data = vid.getMapData();
+
+        //create and send response
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Content-Type", "video/mp4")
+                .header("Accept-Ranges", "bytes")
+                .header("Content-Length", String.valueOf(data.length))
+                .body(data);
+
+    }
+
+
     @PostMapping(value = "/video/{vidid}/getChunk")
     public ResponseEntity<byte[]> videoChunkData(@PathVariable long vidid, @RequestBody JsonNode json){
 
@@ -56,6 +73,9 @@ public class VideoController {
                 .body(data);
 
     }
+
+
+
 
 
 
