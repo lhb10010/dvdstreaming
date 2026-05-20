@@ -1,8 +1,10 @@
 package com.burkhead.dvdstreaming.controller;
 
 import com.burkhead.dvdstreaming.model.Movie;
+import com.burkhead.dvdstreaming.model.ProcessingVideo;
 import com.burkhead.dvdstreaming.model.Video;
 import com.burkhead.dvdstreaming.repository.MovieRepository;
+import com.burkhead.dvdstreaming.repository.ProcessingVideoRepository;
 import com.burkhead.dvdstreaming.repository.VideoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +24,12 @@ public class UploadMovieController {
     final int MAX_TITLE_LENGTH = 50; //TODO make this a config
     private final VideoRepository videoRepository;
     private final MovieRepository movieRepository;
+    private final ProcessingVideoRepository processingVideoRepository;
 
-    public UploadMovieController(VideoRepository videoRepository, MovieRepository movieRepository) {
+    public UploadMovieController(VideoRepository videoRepository, MovieRepository movieRepository, ProcessingVideoRepository processingVideoRepository) {
         this.videoRepository = videoRepository;
         this.movieRepository = movieRepository;
+        this.processingVideoRepository = processingVideoRepository;
     }
 
     @GetMapping("/uploadMovie")
@@ -40,7 +44,7 @@ public class UploadMovieController {
 
         //check that all fields are present
         if(!(json.hasNonNull("title") && json.hasNonNull("image") &&
-                json.hasNonNull("genre") && json.hasNonNull("video"))){
+                json.hasNonNull("genre") &&  json.hasNonNull("video"))){
             //TODO 400
         }
 
@@ -54,17 +58,23 @@ public class UploadMovieController {
 
         //TODO list of genres
         String genre = json.get("genre").asString();
-        if(genre.length() > 25){
+        if(genre.length() > 25){ //TODO config
             //TODO 400
         }
 
         String image = json.get("image").asString();
         byte[] decodedImage = Base64.getDecoder().decode(image);
 
-        long video = json.get("video").asLong();
-        //TODO check video exists
 
+        /*
+        long processingVideoId = json.get("pVideo").asLong();
+        ProcessingVideo p = processingVideoRepository.findProcessingVideoById(processingVideoId);
+        */
+
+
+        long video = json.get("video").asLong();
         Video v = videoRepository.findVideoById(video);
+
 
         //create new movie object
         Movie m = new Movie(title, genre, decodedImage, v);

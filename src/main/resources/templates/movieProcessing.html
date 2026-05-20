@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>This movie's video is still processing. Check back later. </h1>
+    <br>
+    <div>
+        <h4>    Video Processing Progress</h4>
+        <div class="uploadProgressBarOuter">
+            <div id="videoUploadProgress2" class="uploadProgressBarInner">
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+
+    let movie = /*[[${movie}]]*/ [];
+    console.log(movie);
+
+    pollServerProgress(movie.movieVideo);
+
+    //poll ffmpeg progress
+    async function pollServerProgress(fileId){
+
+        let progressBar = document.getElementById("videoUploadProgress2");
+
+        while(true){
+
+            let response = await fetch("/uploadVideo/" + fileId + "/processingProgress", {
+                method: 'GET'
+            });
+
+            let numString = await response.text();
+            let num = Number(numString);
+
+            progressBar.style.width = num + "%";
+
+            if(num >= 100){
+                break;
+            }
+            await sleep(100);
+        }
+    }
+</script>
+</html>

@@ -63,6 +63,7 @@ public class UploadVideoController {
     // ------------------------------------------ upload chunks -------------------------------------------
     // ---------------------------------------------- step 2 ----------------------------------------------
 
+
     @PostMapping(value = "/uploadVideo/{fileid}", consumes = "application/octet-stream")
     public ResponseEntity<String> uploadChuck(@RequestBody byte[] chunkData,
                                               @RequestHeader("x-chunk-number") long chunkNum,
@@ -124,12 +125,9 @@ public class UploadVideoController {
 
         //reconstruct and process into final video
         targetVid.reconstructVideoFile();
-        String finalMp4 = targetVid.convertToFinalFMP4();
-        Video v = Video.createVideoFromProcesingVideo(targetVid, videoRepository);
-
-
-        //cleanup
-        targetVid.cleanUpThis(processingVideoRepo);
+        targetVid.convertToFinalFMP4(processingVideoRepo, videoRepository);
+        Video v = new Video(targetVid);
+        videoRepository.save(v);
 
 
         String data = String.valueOf(v.getId());
@@ -141,7 +139,22 @@ public class UploadVideoController {
     }
 
 
+    @GetMapping(value = "/uploadVideo/{fileid}/processingProgress")
+    public ResponseEntity<String> getProgress(@PathVariable long fileid) {
 
+        ProcessingVideo targetVid = processingVideoRepo.findProcessingVideoById(fileid); //TODO handle not found
+
+        String data = "100";
+        if(targetVid != null) {
+            data = String.valueOf(targetVid.getFfmpegProcessingPercentage());
+        }
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .header("Content-Length", String.valueOf(data.length()))
+                .body(data);
+
+    }
 
     //The Algorithm Loves You
 

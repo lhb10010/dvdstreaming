@@ -3,15 +3,12 @@ package com.burkhead.dvdstreaming.model;
 //temporary object to hold information while a new video upload is processing
 
 import com.burkhead.dvdstreaming.repository.ProcessingVideoRepository;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.burkhead.dvdstreaming.repository.VideoRepository;
+import jakarta.annotation.Nullable;
+import jakarta.persistence.*;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,7 +31,11 @@ public class ProcessingVideo {
     private String finalVideoPath;
     private long chunkCount;
     private long totalByteCount;
-    private int fragTime = 2000;
+    private int fragTime = 2000; //TODO make config
+    private double ffmpegProcessingPercentage;
+    @Nullable
+    @OneToOne
+    private Video v;
 
 
     // ------------------------------------- Construscots -------------------------------------
@@ -46,10 +47,11 @@ public class ProcessingVideo {
         this.chunkFolderPath = "";
         this.wholeVideoPath = "";
         this.finalVideoPath = "";
+        this.v = null;
     }
 
     public ProcessingVideo(){
-
+        this.v = null;
     }
 
 
@@ -175,7 +177,7 @@ public class ProcessingVideo {
 
 
     //step 4
-    public String convertToFinalFMP4(){
+    public String convertToFinalFMP4(ProcessingVideoRepository p, VideoRepository v){
 
         if(this.wholeVideoPath.isEmpty()){
             System.out.println("finalFMP4 error 1");
@@ -189,7 +191,7 @@ public class ProcessingVideo {
         }
 
         String finalVideoPath = this.chunkFolderPath + "/final.mp4";
-        if(!runFFMPEGCommand(this.wholeVideoPath, this.fragTime, finalVideoPath)){
+        if(!runFFMPEGCommand(this.wholeVideoPath, finalVideoPath, p, v)){
             System.out.println("finalFMP4 error 3");
             return "";
         }
@@ -202,9 +204,10 @@ public class ProcessingVideo {
     // -------------------------------- Helpers ----------------------------------
 
 
-    private boolean runFFMPEGCommand(String inputVidPath, int fragLenMilliseconds, String outPath){
+    private boolean runFFMPEGCommand(String inputVidPath, String outPath, ProcessingVideoRepository p, VideoRepository v){
 
         System.out.println("Strating ffmpeg");
+        long durationSeconds = calcDurationOfMp4(inputVidPath) / 1000;
 
         //ffmpeg -i input.mp4 -c:v libx264 -c:a aac -g 60 -keyint_min 60 -sc_threshold 0 -movflags frag_keyframe+dash+delay_moov+global_sidx+default_base_moof x264opts "keyint=48:min-keyint=48:no-scenecut" -f mp4 output.mp4
         //ffmpeg -i input.mp4 -c:v libx264 -c:a aac -g 60 -keyint_min 60 -sc_threshold 0 -movflags frag_keyframe+dash+delay_moov+global_sidx+default_base_moof -x264opts "keyint=48:min-keyint=48:no-scenecut" -f mp4 output.mp4
@@ -217,32 +220,121 @@ public class ProcessingVideo {
         try {
 
             ProcessBuilder ffmpegProcess = new ProcessBuilder("sh", "-c", command);
-            Process p = ffmpegProcess.start();
-            while(p.isAlive()){
 
-            }
-            if(p.exitValue() != 0){
-                System.out.println("returned " + p.exitValue());
-                return false;
-            }
+            //monitor stdout
+            Thread monitorProgress = new Thread(() -> {
+                try {
+                    monitorStdOut(ffmpegProcess.start(), durationSeconds, p, v);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            monitorProgress.start();
 
         }
         catch (Exception e){
             return false;
         }
 
-        System.out.println("ffmpeg done");
         return true;
+    }
+
+
+    private void monitorStdOut(Process ffmpeg, long durationSeconds, ProcessingVideoRepository p, VideoRepository v){
+
+        long fps = 30; //TODO CONFIG
+        long frames = fps * durationSeconds;
+
+        System.out.println("totalFrames: " + frames);
+
+        try{
+
+            //setup
+            InputStream is = ffmpeg.getErrorStream();
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+
+
+            String line = br.readLine();
+            System.out.println(line);
+            while(line != null){
+                //System.out.println("here5");
+                System.out.println(line);
+                if(line.contains("frame=")){
+                    line = line.split(" fps")[0].replace("frame=", "").replace(" ", "");
+                    System.out.println("num: " + line);
+                    System.out.println((Double.parseDouble(line) / frames) * 100);
+                    this.ffmpegProcessingPercentage = (Double.parseDouble(line) / frames) * 100;
+                    p.save(this);
+                }
+                line = br.readLine();
+            }
+
+            System.out.println("here6");
+            this.ffmpegProcessingPercentage = 100.0D;
+
+            assert this.v != null;
+            this.v.completeVideoFromProcessingVideo(v);
+            this.cleanUpThis(p);
+
+        }
+        catch (Exception e){
+            this.ffmpegProcessingPercentage = -1D;
+        }
+    }
+
+
+    private long calcDurationOfMp4(String path){
+
+        String command = "ffmpeg -i " + path + " 2>&1 | grep Duration: | awk '{print $2}'";
+
+        try {
+
+            ProcessBuilder ffmpegProcess = new ProcessBuilder("sh", "-c", command);
+            Process p = ffmpegProcess.start();
+            while(p.isAlive()){
+
+            }
+            if(p.exitValue() != 0){
+                System.out.println("returned " + p.exitValue());
+                return -1;
+            }
+
+            long millis = 0L;
+            String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            out = out.replace(",", "");
+            System.out.println(out);
+            String[] split1 = out.split("\\.");
+            if(split1.length != 2)
+                return -1;
+            String[] split2 = split1[0].split(":");
+            if(split2.length != 3)
+                return -1;
+
+            millis += (60 * 60 * 1000 * Long.parseLong(split2[0]));
+            millis += (60 * 1000 * Long.parseLong(split2[1]));
+            millis += (1000 * Long.parseLong(split2[2]));
+            millis += Long.parseLong(split1[1].replace("\n", ""));
+
+            return millis;
+
+        }
+        catch (Exception e){
+            System.out.println("calc err 1");
+            System.out.println(e.fillInStackTrace());
+            return -1;
+        }
+
     }
 
 
     // -------------------------------- cleanup ----------------------------------
 
 
-    public void cleanUpThis(ProcessingVideoRepository p){ //TODO not void
-        //cleanUpChunkFiles();
-        //cleanUpRemainingFilesAndDirectory();
-        //p.delete(this);
+    private void cleanUpThis(ProcessingVideoRepository p){ //TODO not void
+        cleanUpChunkFiles();
+        cleanUpRemainingFilesAndDirectory();
+        p.delete(this);
     }
 
     private void cleanUpChunkFiles(){
@@ -296,9 +388,10 @@ public class ProcessingVideo {
         return wholeVideoPath;
     }
 
+    public double getFfmpegProcessingPercentage(){return this.ffmpegProcessingPercentage;}
+
 
     // -------------------------------- setters ----------------------------------
-
 
 
     public void setId(Long id) {
@@ -327,5 +420,9 @@ public class ProcessingVideo {
 
     public void setWholeVideoPath(String wholeVideoPath) {
         this.wholeVideoPath = wholeVideoPath;
+    }
+
+    public void setVideo(Video v){
+        this.v = v;
     }
 }

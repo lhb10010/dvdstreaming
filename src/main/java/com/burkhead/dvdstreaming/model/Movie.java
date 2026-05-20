@@ -1,6 +1,7 @@
 package com.burkhead.dvdstreaming.model;
 
 import com.fasterxml.jackson.annotation.*;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 
 import java.io.IOException;
@@ -49,6 +50,7 @@ public class Movie implements Media {
 
     }
 
+
     //used by csv import
     public Movie(String title, String genre, long lastTimeWatched, long lastTimeWatchedPos, byte[] thumbnail, Video vid) throws IOException {
         this.title = title;
@@ -94,14 +96,11 @@ public class Movie implements Media {
         return Base64.getEncoder().encodeToString(this.thumbnail);
     }
 
-    //@JsonGetter("video")
-    //public long getVideoId(){
-    //return this.movieVideo.getId();
-    //}
     @JsonGetter("movieVideo")
     public Video getMovieVideo(){
         return this.movieVideo;
     }
+
 
     // ------------------------------------------- setters -------------------------------------------
 

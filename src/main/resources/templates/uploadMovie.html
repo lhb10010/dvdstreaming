@@ -78,6 +78,24 @@
             </td>
         </tr>
     </table>
+    <br>
+    <div>
+        <h4>    Upload Progress</h4>
+        <div class="uploadProgressBarOuter">
+            <div id="videoUploadProgress1" class="uploadProgressBarInner">
+
+            </div>
+        </div>
+    </div>
+    <br>
+    <div>
+        <h4>    Video Processing Progress</h4>
+        <div class="uploadProgressBarOuter">
+            <div id="videoUploadProgress2" class="uploadProgressBarInner">
+
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -87,6 +105,7 @@
     const chunkSize = 8192; //TODO make config value
     const MAX_IMAGE_SIZE = 400000000; //TODO make config value
     const UPLOAD_CHUNK_RETRYS = 5;
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     //all upload elements
     videoFileElement = document.getElementById("videoUpload");
@@ -211,10 +230,14 @@
         else{
 
             //step 3
-            const vidId = await sendFinalizeVideo(chunks, fileId);
+            let vidId = await sendFinalizeVideo(chunks, fileId);
 
             //step 4
             await uploadMovie(vidId);
+
+            //step 5
+            await pollServerProgress(fileId);
+
         }
 
 
@@ -248,6 +271,7 @@
     //step 2
     async function sendChunks(nums, chunkCount, bytes, fileId){
 
+        let progressBar = document.getElementById("videoUploadProgress1");
         let promises = [];
         const lastChunkSize = bytes.length % chunkSize;
 
@@ -274,6 +298,8 @@
 
             if(i % 100 === 0){
                 await Promise.allSettled(promises);
+                console.log(((i / chunkCount) * 100) + "%");
+                progressBar.style.width = ((i / chunkCount) * 100) + "%";
             }
 
         }
@@ -338,28 +364,40 @@
 
     }
 
+
     //step 3
     async function sendFinalizeVideo(chunkCount, fileid){
+
+        //let data = { movie: movieId};
 
         const response = await fetch("/uploadVideo/" + fileid + "/finish/", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json',
             'x-total-chunk-count': chunkCount},
+            //body: JSON.stringify(data)
         });
 
         console.log("step 3");
         console.log(response);
 
-        return await response.text();
+        let content = await response.text();
+        if(response.ok){
+            return content;
+        }
+        else{
+            //TODO  get needed nums
+        }
+        return [];
 
     }
 
-    //step 4
-    async function uploadMovie(vidId){
+
+    //step 3
+    async function uploadMovie(video){
 
         encodedImage = btoa(imageFile)
 
-        let data = { title: title, genre: genre, video: vidId, image: encodedImage};
+        let data = { title: title, genre: genre, image: encodedImage, video: video};
 
         const response = await fetch("/upload/movie", {
             method: 'POST',
@@ -367,7 +405,33 @@
             body: JSON.stringify(data)
         });
 
-        console.log(response);
+        let idString = await response.text();
+        return Number(idString);
+    }
+
+
+    //step 5
+    //poll ffmpeg progress
+    async function pollServerProgress(fileId){
+
+        let progressBar = document.getElementById("videoUploadProgress2");
+
+        while(true){
+
+            let response = await fetch("/uploadVideo/" + fileId + "/processingProgress", {
+                method: 'GET'
+            });
+
+            let numString = await response.text();
+            let num = Number(numString);
+
+            progressBar.style.width = num + "%";
+
+            if(num >= 100){
+                break;
+            }
+            await sleep(100);
+        }
     }
 
 

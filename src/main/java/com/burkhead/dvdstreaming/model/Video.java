@@ -4,7 +4,9 @@ package com.burkhead.dvdstreaming.model;
 import com.burkhead.dvdstreaming.repository.VideoRepository;
 import com.burkhead.dvdstreaming.utils.ConfigValues;
 import com.burkhead.dvdstreaming.utils.Mp4Parser;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 
 import java.io.*;
@@ -25,6 +27,7 @@ public class Video {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Nullable
     private String videoFolderPath;
 
     private long bytesLength;
@@ -33,9 +36,38 @@ public class Video {
 
     private long durationMillis;
 
+    @OneToOne
+    @Nullable
+    private ProcessingVideo p;
+
 
     // ------------------------------------------ Constructors -----------------------------------------------
 
+    public void completeVideoFromProcessingVideo(VideoRepository videoRepository){
+
+        System.out.println("Creating Video");
+
+        this.fragLength = p.getFragTime();
+        this.createVideoDir();
+
+        this.durationMillis = this.calcDurationOfMp4(p.getFinalVideoPath());
+
+        File f = new File(p.getFinalVideoPath());
+        if(f.exists()){
+            this.bytesLength = f.length();
+        }
+
+        Mp4Parser.parse(p.getFinalVideoPath(), this.videoFolderPath);
+
+        this.videoFolderPath = null;
+        videoRepository.save(this);
+
+        System.out.println("Done Creating Video");
+
+    }
+
+
+    //probably no longer needed
     public static Video createVideoFromProcesingVideo(ProcessingVideo p, VideoRepository videoRepository){
 
         System.out.println("Creating Video");
@@ -62,6 +94,17 @@ public class Video {
         return v;
 
     }
+
+
+    public Video(ProcessingVideo p){
+        this.p = p;
+        this.videoFolderPath = null;
+        this.durationMillis = -1;
+        this.bytesLength = -1;
+        this.fragLength = -1;
+        this.p.setVideo(this);
+    }
+
 
     private Video(){
 
@@ -171,6 +214,9 @@ public User createUser(String name) {
 
     // ------------------------------------------ Getters -----------------------------------------------
 
+    public ProcessingVideo getProcessingVideo(){
+        return this.p;
+    }
 
     public long getBytesLength() {
         return bytesLength;
@@ -232,6 +278,12 @@ public User createUser(String name) {
     }
 
 
+    @JsonGetter("isReady")
+    public boolean isReady(){
+        return p == null;
+    }
+
+
     // ------------------------------------------ ToString Override -----------------------------------------------
 
     /*
@@ -241,15 +293,6 @@ public User createUser(String name) {
     }
 
      */
-
-
-    //TODO make real
-    private static long tempId = 3;
-    public static long getNextId(){
-        long returnId = tempId;
-        tempId++;
-        return returnId;
-    }
 
 
     // ------------------------------------------ Helper Functions -----------------------------------------------

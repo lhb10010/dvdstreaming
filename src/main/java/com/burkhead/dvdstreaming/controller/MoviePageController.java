@@ -29,10 +29,15 @@ public class MoviePageController {
         Movie targetMovie = movieRepository.findMovieById(movie);
         model.addAttribute("movie", targetMovie);
 
-        return "moviePage";
+        if(!targetMovie.getMovieVideo().isReady()){
+            return "movieProcessing";
+        }
+        else {
+            return "moviePage";
+        }
     }
 
-//@PostMapping(consumes = MediaType.TEXT_PLAIN_VALUE)
+
     @PostMapping(path = "/movie/{movie}/watchTime")
     public ResponseEntity<String> updateWatchTime(@RequestBody JsonNode json, @PathVariable long movie){
 
