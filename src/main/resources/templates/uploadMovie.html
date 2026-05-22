@@ -231,6 +231,7 @@
 
             //step 3
             let vidId = await sendFinalizeVideo(chunks, fileId);
+            console.log("here3");
 
             //step 4
             await uploadMovie(vidId);
@@ -381,6 +382,7 @@
         console.log(response);
 
         let content = await response.text();
+        console.log("here2");
         if(response.ok){
             return content;
         }
@@ -392,18 +394,28 @@
     }
 
 
-    //step 3
+    //step 4
     async function uploadMovie(video){
 
-        encodedImage = btoa(imageFile)
+
+        const image = await fileToByteArray(imageFile);
+        console.log("here4");
+        let encodedImage = image.toBase64();
+        console.log(typeof(image));
+        console.log(encodedImage);
 
         let data = { title: title, genre: genre, image: encodedImage, video: video};
+
+        console.log("here5");
 
         const response = await fetch("/upload/movie", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
+
+        console.log("step 4");
+        console.log(response);
 
         let idString = await response.text();
         return Number(idString);
@@ -446,15 +458,7 @@
         return URL.createObjectURL(imgBlob);
     }
 
-    //TODO not yours
-    function bytesToBase64Bytes(bytes) {
-        const binString = Array.from(bytes, (byte) =>
-            String.fromCodePoint(byte),
-        ).join("");
-        return Array.from(btoa(binString), char => char.charCodeAt(0));
-    }
 
-    //TODO not yours
     function fileToByteArray(file) {
         return new Promise((resolve, reject) => {
             var reader = new FileReader();

@@ -63,6 +63,7 @@ public class UploadMovieController {
         }
 
         String image = json.get("image").asString();
+        System.out.println(image);
         byte[] decodedImage = Base64.getDecoder().decode(image);
 
 

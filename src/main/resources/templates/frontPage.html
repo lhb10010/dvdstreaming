@@ -8,7 +8,6 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 
 
-
 </head>
 <body>
     <div th:replace="topBar :: topBar"></div>
@@ -24,7 +23,7 @@
                     <td th:each="movie : ${movieList}">
                         <div class="mediaDisplayInTable">
                             <a th:href="${'/movie/' + movie.id}" >
-                                <img th:src="${movie.thumbnail}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" id="displayImage">
+                                <img th:src="${'/movie/' + movie.id + '/image'}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${movie.id}" onload="loadImage(this)">
                                 <h5 th:text="${movie.title}" class="mediaDisplayText"></h5>
                             </a>
                         </div>
@@ -36,10 +35,15 @@
     </div>
 </body>
 
-
+<script th:inline="javascript">console.log("something");</script>
 <script th:inline="javascript">
+
     let list = /*[[${allMovieLists}]]*/ [];
     console.log(list);
+
+
+
+
 </script>
 
 

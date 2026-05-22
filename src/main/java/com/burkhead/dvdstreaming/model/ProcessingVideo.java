@@ -263,8 +263,12 @@ public class ProcessingVideo {
                 if(line.contains("frame=")){
                     line = line.split(" fps")[0].replace("frame=", "").replace(" ", "");
                     System.out.println("num: " + line);
-                    System.out.println((Double.parseDouble(line) / frames) * 100);
-                    this.ffmpegProcessingPercentage = (Double.parseDouble(line) / frames) * 100;
+                    double percent = (Double.parseDouble(line) / frames) * 100;
+                    if(percent > 99){
+                        percent = 99.0D;
+                    }
+                    System.out.println(percent);
+                    this.ffmpegProcessingPercentage = percent;
                     p.save(this);
                 }
                 line = br.readLine();

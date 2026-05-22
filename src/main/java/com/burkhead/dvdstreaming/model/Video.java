@@ -59,7 +59,7 @@ public class Video {
 
         Mp4Parser.parse(p.getFinalVideoPath(), this.videoFolderPath);
 
-        this.videoFolderPath = null;
+        this.p = null;
         videoRepository.save(this);
 
         System.out.println("Done Creating Video");
@@ -281,6 +281,11 @@ public User createUser(String name) {
     @JsonGetter("isReady")
     public boolean isReady(){
         return p == null;
+    }
+
+
+    public void setProcessingVideoNull(){
+        this.p = null;
     }
 
 

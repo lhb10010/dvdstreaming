@@ -27,6 +27,8 @@ public class FrontPageController {
 
         int titlesPerSection = n;
 
+        System.out.println("here1");
+
         //create genre sections
         ArrayList<String> genres = getGenres();
         ArrayList<ArrayList<Movie>> genresPicks = new ArrayList<ArrayList<Movie>>();
@@ -34,9 +36,13 @@ public class FrontPageController {
             genresPicks.add(getNRandomMoviesFromGenre(genre, titlesPerSection));
         }
 
+        System.out.println("here2");
+
         //create least watched
         ArrayList<Movie> lastTimeWatchedDescending = (ArrayList<Movie>) this.movies.findAll(Sort.by(Sort.Direction.DESC, "lastTimeWatched"));
         ArrayList<Movie> lastTimeWatchedFinal = new ArrayList<Movie>();
+
+        System.out.println("here3");
 
         int j = 0;
         for(int i = 0; i < titlesPerSection; i++){
@@ -48,13 +54,20 @@ public class FrontPageController {
             }
         }
 
+        System.out.println("here4");
+
         ArrayList<ArrayList<Movie>> allMovieLists = new ArrayList<>(genresPicks);
         allMovieLists.add(lastTimeWatchedDescending);
         allMovieLists.add(lastTimeWatchedFinal);
 
+        System.out.println("here5");
+
         ArrayList<String> listNames = new ArrayList<>();
         listNames.add("Action Movies");
         listNames.add("Not Watched In A While");
+        listNames.add("Another One");
+
+        System.out.println("here6");
 
         model.addAttribute("allMovieLists", allMovieLists);
         model.addAttribute("listNames", listNames); //for testing

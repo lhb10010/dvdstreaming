@@ -91,10 +91,6 @@ public class Movie implements Media {
         return this.thumbnail;
     }
 
-    @JsonGetter("thumbnail")
-    public String getB64Thumbnail(){
-        return Base64.getEncoder().encodeToString(this.thumbnail);
-    }
 
     @JsonGetter("movieVideo")
     public Video getMovieVideo(){

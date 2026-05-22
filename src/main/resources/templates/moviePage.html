@@ -221,7 +221,7 @@
         if(fragmentReady) {
 
             //create request
-            await fetch("/movie/" + movie.movieVideo.id + "/watchTime", {
+            await fetch("/movie/" + movie.id + "/watchTime", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

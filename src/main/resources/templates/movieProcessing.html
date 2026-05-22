@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 <body>
     <h1>This movie's video is still processing. Check back later. </h1>
@@ -16,12 +17,14 @@
         </div>
     </div>
 </body>
-<script>
+<script th:inline="javascript">
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     let movie = /*[[${movie}]]*/ [];
     console.log(movie);
     //test
-    pollServerProgress(movie.movieVideo);
+    pollServerProgress(movie.movieVideo.processingVideo.id);
 
     //poll ffmpeg progress
     async function pollServerProgress(fileId){
@@ -40,7 +43,7 @@
             progressBar.style.width = num + "%";
 
             if(num >= 100){
-                break;
+                location.reload(true);
             }
             await sleep(100);
         }

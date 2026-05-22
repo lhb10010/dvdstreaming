@@ -57,4 +57,18 @@ public class MoviePageController {
     }
 
 
+    @GetMapping("/movie/{movie}/image")
+    public ResponseEntity<byte[]> movieImage(@PathVariable long movie) {
+
+        Movie targetMovie = movieRepository.findMovieById(movie);
+        byte[] data = targetMovie.getThumbnail();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Content-Type", "application/octet-stream;")
+                .header("Content-Length", String.valueOf(data.length))
+                .body(data);
+
+    }
+
+
 }
