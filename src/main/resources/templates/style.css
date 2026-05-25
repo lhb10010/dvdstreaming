@@ -114,19 +114,20 @@ h5.listName{
 div.topBar{
     display: block;
     position: sticky;
-    width: 100%;
+    width: 100vw;
     height: 7vh;
     background: greenyellow;
     z-index: 100;
     padding: 0;
     top: 0;
+    margin: 0;
 }
 
 
 table.topBarTable{
     position: sticky;
     display: block;
-    width: 99vw;
+    width: 100%;
     height: 7vh;
     white-space: nowrap;
     table-layout: fixed;
@@ -142,12 +143,14 @@ table.topBarTable tr{
     justify-content: flex-end;
     #overflow: hidden;
     height: 100%;
-    width: 99vw;
+    width: 100vw;
     outline: 5px solid orange;
     white-space: nowrap;
     z-index: 100;
+    top: 0;
 }
 
+/*
 td.topBarFreeSpace{
     background: blueviolet;
     display: block;
@@ -162,6 +165,32 @@ div.topBarFreeSpace{
     width: 100%;
     height: 100%;
 }
+ */
+
+
+td.topBarAddMovie{
+    width: 12%;
+    height: 7vh;
+    background: coral;
+}
+
+div.topBarAddMovie{
+    width: 100%;
+    height: 100%;
+}
+
+a.topBarAddMovie{
+    text-decoration: none;
+}
+
+h3.topBarAddMovie{
+    color: white;
+    width: 100%;
+    height: 3vh;
+    margin-left: 1.1vw;
+    font-size: 2.25vh;
+}
+
 
 td.topBarSearch{
     display: block;
@@ -178,6 +207,16 @@ div.topBarSearch{
     height: 100%;
 }
 
+div.topBarSearch input{
+    width: 100%;
+    height: 70%;
+    margin-top: 1.05vh;
+    background: rgb(31, 31, 31);
+    outline: 1vh black;
+    font-size: 3vh;
+    color: white;
+}
+
 td.topBarSetting{
     display: block;
     position: relative;
@@ -192,6 +231,7 @@ div.topBarSetting{
     position: relative;
     height: 100%;
     width: 100%;
+
 }
 
 /* ----------------------------- Hide Vertical Scroll Bar ------------------------------- */

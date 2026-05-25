@@ -27,8 +27,6 @@ public class FrontPageController {
 
         int titlesPerSection = n;
 
-        System.out.println("here1");
-
         //create genre sections
         ArrayList<String> genres = getGenres();
         ArrayList<ArrayList<Movie>> genresPicks = new ArrayList<ArrayList<Movie>>();

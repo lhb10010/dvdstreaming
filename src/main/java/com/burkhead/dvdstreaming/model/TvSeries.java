@@ -71,6 +71,12 @@ public class TvSeries implements Media {
         return this.genre;
     }
 
+    @Override
+    public String getType() {
+        return "series";
+    }
+
+
     //setters
 
 

@@ -97,6 +97,10 @@ public class Movie implements Media {
         return this.movieVideo;
     }
 
+    @Override
+    public String getType() {
+        return "movie";
+    }
 
     // ------------------------------------------- setters -------------------------------------------
 
