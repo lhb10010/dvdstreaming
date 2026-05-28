@@ -23,8 +23,12 @@
                     <td th:each="movie : ${movieList}">
                         <div class="mediaDisplayInTable">
                             <a th:href="${'/movie/' + movie.id}" >
-                                <img th:src="${'/movie/' + movie.id + '/image'}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${movie.id}" onload="loadImage(this)">
+                                <img th:src="${'/movie/' + movie.id + '/image'}" th:alt="${movie.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${movie.id}">
                                 <h5 th:text="${movie.title}" class="mediaDisplayText"></h5>
+                                <div th:if='${movie.progressPercent != 0}' id="mediaDisplayProgressBarBackground" class="mediaDisplayProgressBar">
+                                    <div id="mediaDisplayProgressBar" class="mediaDisplayProgressBar" th:style="'width: ' + ${movie?.progressPercent ?: 0} + '%;'"></div>
+                                </div>
+
                             </a>
                         </div>
                     </td>

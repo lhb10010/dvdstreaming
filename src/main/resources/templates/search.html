@@ -11,28 +11,31 @@
 </head>
 <body>
 <div th:replace="topBar :: topBar"></div>
-<div th:each="media, status : ${finds}">
+<div class="searchPageContainer">
+    <div th:each="media, status : ${finds}">
 
-    <div th:if='${media.type.equals("movie")}' class="mediaDisplayInTable">
-        <a th:href="${'/movie/' + media.id}" >
-            <img th:src="${'/movie/' + movie.id + '/image'}" th:alt="${media.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${media.id}" onload="loadImage(this)">
-            <h5 th:text="${media.title}" class="mediaDisplayText"></h5>
-        </a>
-    </div>
-    <div th:if='${media.type.equals("show")}' class="mediaDisplayInTable">
-        <a th:href="${'/series/' + media.id}" >
-            <img th:src="${'/series/' + media.id + '/image'}" th:alt="${media.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${media.id}" onload="loadImage(this)">
-            <h5 th:text="${media.title}" class="mediaDisplayText"></h5>
-        </a>
-    </div>
+        <div class="mediaDisplayNoTable">
+            <div th:if='${media.type.equals("movie")}' class="mediaDisplayInTable">
+                <a th:href="${'/movie/' + media.id}" >
+                    <img th:src="${'/movie/' + media.id + '/image'}" th:alt="${media.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${media.id}">
+                    <h5 th:text="${media.title}" class="mediaDisplayText"></h5>
+                </a>
+            </div>
+            <div th:if='${media.type.equals("show")}' class="mediaDisplayInTable">
+                <a th:href="${'/series/' + media.id}" >
+                    <img th:src="${'/series/' + media.id + '/image'}" th:alt="${media.title + ' thumbnail'}" class="mediaDisplayImage" th:data-movie-id="${media.id}">
+                    <h5 th:text="${media.title}" class="mediaDisplayText"></h5>
+                </a>
+            </div>
+        </div>
 
+    </div>
 </div>
 </body>
 
-<script th:inline="javascript">console.log("something");</script>
 <script th:inline="javascript">
 
-    let list = /*[[${allMovieLists}]]*/ [];
+    let list = /*[[${finds}]]*/ [];
     console.log(list);
 
 

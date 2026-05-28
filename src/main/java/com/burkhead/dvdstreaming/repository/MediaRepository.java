@@ -20,12 +20,13 @@ public class MediaRepository {
         this.movieRepository = movieRepository;
     }
 
-    /*
+
     public ArrayList<Media> findByTitleContaining(String title){
-        ArrayList<Media> finds = new ArrayList<>();
-        this.movieRepository.findByTitleContaining();
+        ArrayList<Media> finds = new ArrayList<>(this.movieRepository.findByTitleContaining(title));
+        finds.addAll(this.tvSeriesRepository.findByTitleContaining(title));
+        return finds;
     }
-    List<Movie> findByTitleContaining(String title);
-*/
+
+
 }
 

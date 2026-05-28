@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import java.io.IOException;
 import java.util.Base64;
 
+import static java.lang.Double.NaN;
+
 @Entity
 public class Movie implements Media {
 
@@ -66,7 +68,7 @@ public class Movie implements Media {
     // ------------------------------------------- getters -------------------------------------------
 
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -102,6 +104,31 @@ public class Movie implements Media {
         return "movie";
     }
 
+    @Override
+    @JsonGetter("progress")
+    public long getProgress(){
+        return this.lastTimeWatchedPos;
+    }
+
+    @Override
+    @JsonGetter("progressPercent")
+    public double getProgressPercent(){
+
+        if(this.movieVideo == null){
+            return 0.0D;
+        }
+
+        long duration = this.movieVideo.getDurationMillis() / 1000;
+        double rtrnVal = (double) this.lastTimeWatchedPos / (double) duration;
+
+        if(Double.isNaN(rtrnVal)){
+            return 0.0D;
+        }
+
+        return rtrnVal * 100;
+    }
+
+
     // ------------------------------------------- setters -------------------------------------------
 
 
@@ -110,8 +137,24 @@ public class Movie implements Media {
     }
 
     public void setLastTimeWatchedPos(long timeWatched){
-        if(timeWatched > 0){
+
+        if(this.movieVideo == null){
+            this.lastTimeWatchedPos = 0;
+            return;
+        }
+
+        long bottomCutoff = (long) (((double) this.movieVideo.getDurationMillis() / 1000) * 0.1);
+        long topCutoff = (long) (((double) this.movieVideo.getDurationMillis() / 1000) * 0.9);
+
+        if(timeWatched > 0 && timeWatched > bottomCutoff && timeWatched < topCutoff){
             this.lastTimeWatchedPos = timeWatched;
         }
+        else{
+            this.lastTimeWatchedPos = 0;
+        }
+
+        System.out.println("progress set: " + this.lastTimeWatchedPos + " timeWatched: " + timeWatched);
     }
+
+
 }

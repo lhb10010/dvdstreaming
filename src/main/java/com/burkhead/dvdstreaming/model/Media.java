@@ -7,10 +7,15 @@ public interface Media {
 
     public String getTitle();
     public long getLastTimeWatched();
+    public long getId();
+    @JsonGetter("progress")
+    public long getProgress();
+
+    //@JsonGetter("progressPercent")
+    public double getProgressPercent();
 
     @JsonGetter("type")
     public String getType();
-    //public byte[] getThumbnail();
-    //public String getThumbnailB64();
+
 
 }

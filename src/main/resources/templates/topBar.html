@@ -3,6 +3,13 @@
       <table class="topBarTable">
 
         <tr>
+          <td class="topBarHome">
+            <div class="topBarHome">
+              <a href="/" class="topBarHome">
+                <p class="topBarHome">📺</p>
+              </a>
+            </div>
+          </td>
           <!--
           <td class="topBarFreeSpace">
             <div class="topBarFreeSpace"></div>
@@ -11,7 +18,7 @@
           <td class="topBarAddMovie">
             <div class="topBarAddMovie">
               <a href="/uploadMovie" class="topBarAddMovie">
-                <h3 class="topBarAddMovie">Upload Movie</h3>
+                <p class="topBarAddMovie">Upload Movie</p>
               </a>
             </div>
           </td>
@@ -19,7 +26,7 @@
           <td class="topBarSearch">
             <div class="topBarSearch">
               <!--<label>Search Media</label>-->
-              <input type="search" placeholder="Search Media">
+              <input type="search" placeholder="Search Media" id="topBarSearch">
             </div>
           </td>
           <td class="topBarSetting">
@@ -29,5 +36,15 @@
         </tr>
 
     </table>
+    <script>
+
+      topBarSearch = document.getElementById("topBarSearch");
+      topBarSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          window.location.href = "/search?q=" + topBarSearch.value;
+        }
+      });
+
+    </script>
 
   </div>

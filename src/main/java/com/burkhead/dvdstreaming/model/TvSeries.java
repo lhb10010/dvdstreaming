@@ -67,6 +67,11 @@ public class TvSeries implements Media {
         return this.lastTimeWatched;
     }
 
+    @Override
+    public long getId() {
+        return this.id;
+    }
+
     public String getGenres(){
         return this.genre;
     }
@@ -77,6 +82,14 @@ public class TvSeries implements Media {
     }
 
 
+    public long getProgress(){
+        return this.lastEpisodeWatchedPos;
+    }
+
+
+    public double getProgressPercent(){
+        return 0.0; //TODO make real
+    }
     //setters
 
 
