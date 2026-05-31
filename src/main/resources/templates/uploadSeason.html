@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Season</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+    <div th:replace="topBar :: topBar"></div>
+
+
+    <table class="chooseSeriesTable">
+        <tr class="chooseSeriesTableRow1">
+            <td id="chooseSeriesTableColumn0">
+                <p class="chooseSeriesTableText">Choose Existing Series</p>
+            </td>
+            <td class="chooseSeriesTableColumn1">
+                <h2 class="chooseSeriesTableText">OR</h2>
+            </td>
+            <td class="chooseSeriesTableColumn2">
+                <p class="chooseSeriesTableText">Create A New Series</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="chooseSeriesTableText">
+                    <h3>Choose Series To Add To</h3><br>
+                    <select id="seriesSelect">
+                        <option th:each="show : ${all}" th:label="${show.title}" th:value="${show.id}"></option>
+                    </select>
+                </div>
+            </td>
+            <td>
+
+            </td>
+            <td>
+                <a href="/uploadSeries">
+                    <h1 class="chooseSeriesTableText">+</h1>
+                </a>
+            </td>
+        </tr>
+    </table>
+
+
+    <!--
+    <h3>Add Season To Existing Show?</h3><br>
+    <input type="checkbox" id="newSeriesCheckbox"><br><br>
+
+
+    Choose existing series
+    <div id="chooseSeriesDiv" style="display: none">
+        <h3>Choose Series To Add To</h3>
+        <select>
+            <option></option>
+        </select>
+    </div>
+    -->
+
+
+    <!-- --------------------------------------------Hidden-------------------------------------------- -->
+
+
+    <div id="uploadSection" style="display: none">
+
+        <!-- Display Media Thumbnail Preview -->
+        <div class="mediaUploadShowcase" >
+            <div class="mediaUploadShowcaseDisplay">
+                <img src="thumbnail/1" alt="what" class="mediaDisplayImage" id="displayImage">
+                <h5 class="mediaDisplayText" id="mediaDisplayText">Series Title</h5>
+            </div>
+        </div>
+
+
+        <div>
+            <p>Season Number</p>
+            <input type="number">
+        </div>
+
+
+        <!-- upload episodes -->
+        <div>
+            <p>Add Another Episode</p><br>
+            <img alt="Add Another Episode Button" id="addAnotherEpisodeButton">
+            <div id="uploadEpisodeSection">
+
+
+            </div>
+        </div>
+    </div>
+
+</body>
+<script src="/javascript/uploadVideo.js"></script>
+<script th:inline="javascript">
+
+    let addEpisodeButton = null;
+
+    //redirect to create series if no series exist
+    let list = /*[[${all}]]*/ [];
+    if(list.length === 0){
+        window.location.href = "/uploadSeries";
+    }
+
+    //handle choose series
+    let seriesSelect = document.getElementById("seriesSelect");
+    seriesSelect.addEventListener("change", function (){
+       if(seriesSelect.value !== -1){
+           document.getElementById("uploadSection").style.display = "block";
+           addEpisodeButton = document.getElementById("addAnotherEpisodeButton");
+           addEpisodeButton.addEventListener("click", function(){
+               addAnotherEpisodeHTML();
+           });
+       }
+    });
+
+
+</script>
+<script th:inline="javascript">
+
+
+    //add another episode
+    let videoFiles = [];
+    let episodeNum = 0;
+
+
+    function addAnotherEpisodeHTML(){
+
+        episodeNum++;
+
+        let newHtml = '<div>\n' +
+            '                <table class="movieInputTable">\n' +
+            '\n' +
+            '                    <!-- choose an episode video -->\n' +
+            '                    <tr>\n' +
+            '                        <td>\n' +
+            '                            <h5>Choose a Movie Video</h5>\n' +
+            '                        </td>\n' +
+            '                        <td>\n' +
+            '                            <div class="chooseVideoFileDiv">\n' +
+            '                                <input type="file" id="videoUpload' + episodeNum + '" accept="video/mp4">\n' +
+            '                            </div>\n' +
+            '                        </td>\n' +
+            '                    </tr>\n' +
+            '\n' +
+            '                    <!-- choose episode Title -->\n' +
+            '                    <tr>\n' +
+            '                        <td>\n' +
+            '                            <h5>Enter Episode Title</h5>\n' +
+            '                        </td>\n' +
+            '                        <td>\n' +
+            '                            <div class="titleInputDiv">\n' +
+            '                                <!-- TODO make maxlength config dependant -->\n' +
+            '                                <input type="text" maxlength="50" minlength="1" id="titleBox' + episodeNum + '">\n' +
+            '                            </div>\n' +
+            '                        </td>\n' +
+            '                    </tr>\n' +
+            '\n' +
+            '                    <!-- Submit Button -->\n' +
+            '                    <tr>\n' +
+            '                        <td>\n' +
+            '                        </td>\n' +
+            '                        <td>\n' +
+            '                            <input type="button" id="submitButton' + episodeNum + '" data-num="' + episodeNum + '" content="Submit" onclick="uploadEpisode(this)">\n' +
+            '                        </td>\n' +
+            '                    </tr>\n' +
+            '                </table>\n' +
+            '            ' +
+            '<div>\n' +
+            '        <h4>    Upload Progress</h4>\n' +
+            '        <div class="uploadProgressBarOuter">\n' +
+            '            <div id="videoUploadProgress' + episodeNum + '" class="uploadProgressBarInner">\n' +
+            '\n' +
+            '            </div>\n' +
+            '        </div>\n' +
+            '    </div>\n' +
+            '</div>';
+
+        console.log(newHtml);
+
+        let uploadEpisodeSection = document.getElementById("uploadEpisodeSection")
+        uploadEpisodeSection.insertAdjacentHTML('beforeend', newHtml);
+
+    }
+
+    async function uploadEpisode(element) {
+
+        let num = element.dataset.num;
+        let videoUpload = document.getElementById("videoUpload" + num);
+        let titleBox = document.getElementById("titleBox" + num);
+        let video = videoUpload.files[0];
+        let title = titleBox.value;
+        if (checkVideoFile(video) && checkEpisodeTitle(title)) {
+            element.disabled = true;
+            videoUpload.disabled = true;
+            titleBox.disabled = true;
+            let progBar = document.getElementById("videoUploadProgress" + num);
+            let videoId = await uploadVideo(video, 5, 8192, progBar);
+            if (videoId !== -1) {
+                return;
+            }
+            videoFiles.push(videoId);
+        }
+
+    }
+
+    function checkVideoFile(){
+        return true;
+    }
+
+    function checkEpisodeTitle(){
+        return true;
+    }
+
+
+
+</script>
+<script>
+
+</script>
+</html>

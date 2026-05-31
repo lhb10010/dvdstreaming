@@ -44,4 +44,7 @@ public class TvEpisode {
         return this.season.getSeries();
     }
 
+    public long getId() {
+        return this.id;
+    }
 }

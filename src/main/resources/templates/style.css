@@ -367,3 +367,43 @@ div.searchPageContainer{
     justify-content: center;
     width: 100vw;
 }
+
+/* ----------------------------- Upload Series ------------------------------- */
+
+table.chooseSeriesTable{
+    background: green;
+    width: 100vw;
+}
+
+
+tr#chooseSeriesTableRow1{
+    height: 5vh;
+}
+
+
+td.chooseSeriesTableColumn0{
+    width: 45vw;
+}
+
+
+td.chooseSeriesTableColumn1{
+    width: 10vw;
+}
+
+
+td.chooseSeriesTableColumn2{
+    width: 45vw;
+}
+
+.chooseSeriesTableText{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* center item in CSS */
+#centeredItem{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

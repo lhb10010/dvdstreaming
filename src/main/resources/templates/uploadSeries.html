@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create New Series</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div th:replace="topBar :: topBar"></div>
+
+
+    <!-- Display Media Thumbnail Preview -->
+    <div class="mediaUploadShowcase" >
+        <div class="mediaUploadShowcaseDisplay">
+            <img alt="what" class="mediaDisplayImage" id="displayImage">
+            <h5 class="mediaDisplayText" id="mediaDisplayText">Series Title</h5>
+        </div>
+    </div>
+
+
+    <!-- Create new series -->
+    <div id="newSeriesMakerDiv" style="display: block">
+        <h3>Create New Series</h3>
+        <table class="movieInputTable">
+
+            <!-- choose a series Thumbnail -->
+            <tr>
+                <td>
+                    <h5>Choose a movie thumbnail</h5>
+                </td>
+                <td>
+                    <div class="chooseImageFileDiv">
+                        <input type="file" id="imageUpload" accept="image/png, image/jpeg" onchange="checkImageReady()">
+                    </div>
+                </td>
+            </tr>
+
+            <!-- choose a Title -->
+            <tr>
+                <td>
+                    <h5>Enter Movie Title</h5>
+                </td>
+                <td>
+                    <div class="titleInputDiv">
+                        <!-- TODO make maxlength config dependant -->
+                        <input type="text" maxlength="50" minlength="1" id="title" onchange="checkTitleReady()">
+                    </div>
+                </td>
+            </tr>
+
+            <!-- choose a Genre -->
+            <tr>
+                <td>
+                    <h5>Choose Genre</h5>
+                </td>
+                <td>
+                    <div class="genreInputDiv">
+                        <input id="genre" onchange="checkGenreReady()">
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Submit Button -->
+            <tr>
+                <td>
+                </td>
+                <td>
+                    <input type="button" id="submit" disabled content="Submit">
+                </td>
+            </tr>
+        </table>
+
+    </div>
+</body>
+<script th:inline="javascript">
+
+
+
+</script>
+</html>
