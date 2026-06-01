@@ -10,7 +10,7 @@ import java.util.Base64;
 import static java.lang.Double.NaN;
 
 @Entity
-public class Movie implements Media {
+public class Movie implements Media, VideoContainer {
 
     //members
 
@@ -157,4 +157,7 @@ public class Movie implements Media {
     }
 
 
+    public void setVideo(Video v) {
+        this.movieVideo = v;
+    }
 }

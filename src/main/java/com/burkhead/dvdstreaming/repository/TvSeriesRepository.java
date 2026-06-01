@@ -14,4 +14,6 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     List<TvSeries> findByTitleContaining(String title);
 
     List<TvSeries> findAll();
+
+    TvSeries findTvSeriesById(long id);
 }

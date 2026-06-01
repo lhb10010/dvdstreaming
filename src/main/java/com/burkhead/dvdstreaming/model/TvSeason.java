@@ -28,7 +28,6 @@ public class TvSeason {
 
     }
 
-    //used for CSV import
     public TvSeason(int seasonNumber, TvSeries series){
         this.seasonNumber = seasonNumber;
         this.series = series;
@@ -47,4 +46,7 @@ public class TvSeason {
         this.episodes.add(ep);
     }
 
+    public long getId() {
+        return this.id;
+    }
 }

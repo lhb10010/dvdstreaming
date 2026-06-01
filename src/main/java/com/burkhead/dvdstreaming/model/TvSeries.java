@@ -36,25 +36,18 @@ public class TvSeries implements Media {
 
     //constructor
 
-    private void genericNew(){
-        this.lastTimeWatched = -1;
-        this.lastEpisodeWatched = null;
-        this.lastEpisodeWatchedPos = 0;
+
+    public TvSeries(String title, String genre, byte[] image){
+        this.title = title;
+        this.genre = genre;
+        this.thumbnail = image;
         this.seasons = new ArrayList<>();
+        this.lastTimeWatched = -1;
+        this.lastEpisodeWatchedPos = 0;
     }
 
     public TvSeries(){
 
-    }
-
-    //used for CSV import
-    public TvSeries(String title, String genre, long lastTimeWatched, String thumbnailPath){
-        this.title = title;
-        this.genre = genre;
-        this.lastTimeWatched = lastTimeWatched;
-        this.lastEpisodeWatched = null;
-        this.lastEpisodeWatchedPos = 0;
-        this.seasons = new ArrayList<>();
     }
 
     //getters

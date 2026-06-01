@@ -1,9 +1,10 @@
 package com.burkhead.dvdstreaming.model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 
 @Entity
-public class TvEpisode {
+public class TvEpisode implements VideoContainer {
 
     //members
 
@@ -18,6 +19,7 @@ public class TvEpisode {
     @ManyToOne
     private TvSeason season;
 
+    @Nullable
     @OneToOne
     private Video episodeVideo;
 
@@ -29,13 +31,11 @@ public class TvEpisode {
 
     }
 
-    //used by csv import
-    public TvEpisode(String title, int episodeNum, Video vid, TvSeason season){
+    public TvEpisode(String title, int number, TvSeason season){
         this.episodeTitle = title;
-        this.episodeNum = episodeNum;
-        this.episodeVideo = vid;
+        this.episodeNum = number;
+        this.episodeVideo = null;
         this.season = season;
-        this.season.addEpisode(this);
     }
 
     //getters
@@ -46,5 +46,10 @@ public class TvEpisode {
 
     public long getId() {
         return this.id;
+    }
+
+    @Override
+    public void setVideo(Video v) {
+        this.episodeVideo = v;
     }
 }

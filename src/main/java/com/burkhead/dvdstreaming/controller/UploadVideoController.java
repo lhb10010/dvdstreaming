@@ -1,8 +1,12 @@
 package com.burkhead.dvdstreaming.controller;
 
 import com.burkhead.dvdstreaming.model.ProcessingVideo;
+import com.burkhead.dvdstreaming.model.TvSeason;
 import com.burkhead.dvdstreaming.model.Video;
+import com.burkhead.dvdstreaming.model.VideoContainer;
+import com.burkhead.dvdstreaming.repository.MovieRepository;
 import com.burkhead.dvdstreaming.repository.ProcessingVideoRepository;
+import com.burkhead.dvdstreaming.repository.TvEpisodeRepository;
 import com.burkhead.dvdstreaming.repository.VideoRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +23,14 @@ public class UploadVideoController {
 
     public final VideoRepository videoRepository;
     public final ProcessingVideoRepository processingVideoRepo;
+    public final MovieRepository movieRepository;
+    public final TvEpisodeRepository tvEpisodeRepository;
 
-    public UploadVideoController(VideoRepository videoRepository, ProcessingVideoRepository processingVideoController) {
+    public UploadVideoController(VideoRepository videoRepository, ProcessingVideoRepository processingVideoController, MovieRepository movieRepository, TvEpisodeRepository tvEpisodeRepository) {
         this.videoRepository = videoRepository;
         this.processingVideoRepo = processingVideoController;
+        this.movieRepository = movieRepository;
+        this.tvEpisodeRepository = tvEpisodeRepository;
     }
 
     //step 1
@@ -155,6 +163,49 @@ public class UploadVideoController {
                 .body(data);
 
     }
+
+
+    /*
+    @PostMapping(value = "/applyVideo")
+    public ResponseEntity<String> applyVideoToVideoContainer(@RequestBody JsonNode json) {
+
+        if(!(json.hasNonNull("containerId") && json.hasNonNull("type") && json.hasNonNull("videoId"))){
+            //TODO 400
+        }
+
+        long containerId = json.get("containerId").asLong();
+        String type = json.get("type").asString();
+        if(type.equals("movie")){
+            v = movieRepository.findMovieById(containerId);
+        }
+        else if(type.equals("tv")){
+            v = tvEpisodeRepository.findTvEpisodeById(containerId);
+        }
+        else{
+            //TODO 400
+        }
+
+        if(v == null){
+            //TODO 400
+        }
+
+        long videoId = json.get("videoId").asLong();
+        Video video = videoRepository.findVideoById(videoId);
+        if(video == null){
+            //TODO 400
+        }
+
+        v.setVideo(video);
+
+        String data = "OK";
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .header("Content-Length", String.valueOf(data.length()))
+                .body(data);
+
+    }
+    */
+
 
     //The Algorithm Loves You
 
