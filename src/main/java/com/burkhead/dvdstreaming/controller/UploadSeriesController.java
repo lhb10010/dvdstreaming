@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
@@ -39,9 +40,13 @@ public class UploadSeriesController {
 
 
     @GetMapping("/uploadSeason")
-    public String uploadSeasonPage(Model model){
+    public String uploadSeasonPage(Model model, @RequestParam String q){
 
         ArrayList<TvSeries> allSeries = (ArrayList<TvSeries>) tvSeriesRepository.findAll();
+
+        if(!q.isEmpty()) {
+            model.addAttribute("targetSeries", q);
+        }
 
         model.addAttribute("all", allSeries); //TODO make only name and ID
 

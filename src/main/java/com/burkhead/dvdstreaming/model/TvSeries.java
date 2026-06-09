@@ -1,5 +1,6 @@
 package com.burkhead.dvdstreaming.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 
@@ -32,6 +33,8 @@ public class TvSeries implements Media {
     private String genre;
 
     //thumbnail
+    @JsonIgnore
+    @Column(columnDefinition = "MEDIUMBLOB")
     private byte[] thumbnail;
 
     //constructor

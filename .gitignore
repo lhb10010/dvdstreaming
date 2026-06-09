@@ -44,3 +44,5 @@ build/
 *.jpg
 *.png
 *.csv
+*.h
+*.cpp
