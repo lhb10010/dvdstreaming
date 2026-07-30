@@ -176,7 +176,7 @@ std::string Drive::getCapabilitiesAsString(){
 
 
 bool Drive::hasDisk(){
-    return false; //TODO make real
+    return true; //TODO make real
 }
 
 

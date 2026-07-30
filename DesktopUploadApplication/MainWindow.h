@@ -4,6 +4,7 @@
 #include <gtkmm.h>
 #include "Drive.h"
 
+
 class MainWindow : public Gtk::Window{
 
     public:
@@ -12,11 +13,17 @@ class MainWindow : public Gtk::Window{
         void loadChooseDriveView();
         void loadWaitingForDiscPage();
 
+
+        //constants
+        static const int MOVIE = 0;
+        static const int SERIES = 1;
+
     private:
 
-        void onRipDvd();
+        
         Gtk::Stack* stack;
         Drive* selectedDrive = nullptr;
+        int mediaType = MOVIE;
 
 
         //start page 
@@ -44,6 +51,24 @@ class MainWindow : public Gtk::Window{
 
         //disk waiting page
         void setupWaitingForDiscPage(Gtk::Box* insertDiscView);
+
+        //rip progress page
+        void setupRipProgressPage(Gtk::Box* insertDiscView);
+        void loadRipProgressPage();
+        Gtk::ProgressBar* makemkvProgressBar;
+        Gtk::ProgressBar* handbrakeProgressBar;
+        void onRipDvd();
+
+        //movie video options pages
+        void setupMovieVideoOptionsPage(Gtk::Box* movieVideoOptionsView, std::string vidFile);
+        void loadMovieVideoOptionsPage(int currentPos);
+        void onNext();
+        void onBack();
+        void onSkip();
+        int currentPos = 0;
+        std::vector<std::string> movieVideoOptionsPages;
+        std::string* selectedMovieVideo = nullptr;
+        std::vector<std::string> selectedSpecials = std::vector<std::string>();
         
 
     //window

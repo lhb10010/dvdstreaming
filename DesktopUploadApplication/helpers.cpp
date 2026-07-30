@@ -7,7 +7,7 @@
 std::vector<std::string> splitString(std::string s, char c){
 
     std::vector<std::string> stringVec = std::vector<std::string>();
-    char* currentString = new char[s.length()];
+    char* currentString = new char[s.length() + 1];
 
     int j = 0;
     for(int i = 0; i < s.length(); i++){
