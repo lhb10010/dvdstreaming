@@ -8,7 +8,22 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+
+class StartPage;
+class DrivePickerPage;
+class MovieVideoOptionsPage;
+class RipProgressPage;
+class WaitingForDiscPage;
+class Movie;
+
 namespace fs = std::filesystem;
+
+
+// --------------------------------------------------------------------------
+//                                Constructor
+// --------------------------------------------------------------------------
+
+
 void onRipDvd(Gtk::ProgressBar* makemkvProgressBar, Gtk::ProgressBar* handbrakeProgressBar);
 
 MainWindow::MainWindow()
@@ -35,37 +50,120 @@ MainWindow::MainWindow()
 
 
     //create pages
-    auto startView = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 10));
-    stack->add(*startView, "startPage", "Start Page");
-    auto chooseDriveView = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 10));
-    stack->add(*chooseDriveView, "drivePickerPage", "Drive Chooser Page");
-    auto insertDiscView = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 10));
-    stack->add(*insertDiscView, "insertDiscPage", "Insert Disc Page");
-    auto ripProgressPage = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 10));
-    stack->add(*ripProgressPage, "ripProgressPage", "Rip Progress");
+    this->startPage = new StartPage(this);
+    this->pickerPage = new DrivePickerPage(this);
+    this->progressPage = new RipProgressPage(this);
+    this->waitingPage = new WaitingForDiscPage(this);
 
 
-    //setup pages
-    setupStartPage(startView);
-    setupDrivePickerPage(chooseDriveView);
-    setupWaitingForDiscPage(insertDiscView); 
-    setupRipProgressPage(ripProgressPage);
-
-
+    //add menu and page switcher
     m_vbox.pack_start(m_menubar, Gtk::PACK_SHRINK);
     m_vbox.pack_start(*stack, Gtk::PACK_EXPAND_WIDGET);
-
     add(m_vbox);
     show_all_children(); 
 
-    this->stack->set_visible_child("startPage");
+
+    //create other starting data
+    this->targetMovie = new Movie();
+    this->movieVideo = "";
+
+
+    //load first page
+    this->startPage->loadThis();
+
+  
 }
+
+
+// --------------------------------------------------------------------------
+//                            Getters and Setters
+// --------------------------------------------------------------------------
+
+
+Gtk::Stack* MainWindow::getStack(){
+    return this->stack;
+}
+
+
+Drive* MainWindow::getSelectedDrive(){
+    return this->selectedDrive;
+}
+
+
+void MainWindow::setSelectedDrive(Drive* drive){
+    this->selectedDrive = drive;
+}
+
+
+Movie* MainWindow::getMovie(){
+    return this->targetMovie;
+}
+
+
+void MainWindow::setMovieVideo(std::string vidPath){
+    this->movieVideo = vidPath;
+}
+
+
+std::string MainWindow::getMovieVideo(){
+    return this->movieVideo;
+}
+
+
+void MainWindow::setMovieVideoOptionsPagesVector(std::vector<MovieVideoOptionsPage*> v){
+    this->movieVideoOptionsPages = v;
+}
+
+
+void MainWindow::addVideoToExtrasList(std::string vidPath){
+    for(int i = 0; i < this->dvdExtrasVideoPaths.size(); i++){
+        if(this->dvdExtrasVideoPaths.at(i) == vidPath){
+            return;
+        }
+    }
+    this->dvdExtrasVideoPaths.push_back(vidPath);
+}
+
+
+void MainWindow::removeVideoFromExtrasList(std::string vidPath){
+    for(int i = 0; i < this->dvdExtrasVideoPaths.size(); i++){
+        if(this->dvdExtrasVideoPaths.at(i) == vidPath){
+            this->dvdExtrasVideoPaths.erase(this->dvdExtrasVideoPaths.begin() + i);
+            return;
+        }
+    }
+}
+
+
+// --------------------------------------------------------------------------
+//                                Load Pages
+// --------------------------------------------------------------------------
+
+
+    void MainWindow::loadDrivePickerPage(){
+        this->pickerPage->loadThis();
+    }
+
+
+    void MainWindow::loadWaitingForDiscPage(){
+        this->waitingPage->loadThis();
+    }
+
+
+    void MainWindow::loadStartPage(){
+        this->startPage->loadThis();
+    }
+
+
+    void MainWindow::loadRipProgressPage(){
+        this->progressPage->loadThis();
+    }
 
 
 // --------------------------------------------------------------------------
 //                                Start Page
 // --------------------------------------------------------------------------
-
+/*
 
 void MainWindow::setupStartPage(Gtk::Box* startView){
     Gtk::Button* nextPageButton = Gtk::make_managed<Gtk::Button>("Start Ripping Discs");
@@ -171,7 +269,6 @@ void MainWindow::setupDrivePickerPage(Gtk::Box* chooseDriveView){
     pickerTableWidget->set_hexpand(true);
     pickerTableWidget->set_vexpand(true);
 
-
 }
 
 
@@ -209,6 +306,8 @@ void MainWindow::loadChooseDriveView(){
 }
 
 
+
+
 // --------------------------------------------------------------------------
 //                           Waiting For Disc Page
 // --------------------------------------------------------------------------
@@ -230,7 +329,8 @@ void MainWindow::loadWaitingForDiscPage(){
 // --------------------------------------------------------------------------
 //                             Rip Progress Page
 // --------------------------------------------------------------------------
-
+*/
+/*
 
 void MainWindow::setupRipProgressPage(Gtk::Box* ripProgressView){
 
@@ -270,10 +370,14 @@ void MainWindow::loadRipProgressPage(){
     t.detach();
 }
 
+*/
+
 
 // --------------------------------------------------------------------------
 //                          Movie Video Options Page
 // --------------------------------------------------------------------------
+
+/*
 
 
 void MainWindow::setupMovieVideoOptionsPage(Gtk::Box* movieVideoOptionsView, std::string vidFile){
@@ -359,7 +463,7 @@ void errorDialog(){
 
 }
 
-
+*/
 
 // --------------------------------------------------------------------------
 //                          Movie Details Page
@@ -401,216 +505,3 @@ void setupMovieDetailsPage(Gtk::Box* movieDetailsView){
 //}
 
 
-// --------------------------------------------------------------------------
-//                                      RIP
-// --------------------------------------------------------------------------
-
-
-void setProgressBar(Gtk::ProgressBar* bar, double percent){
-    Glib::signal_idle().connect([bar, percent]() {
-        bar->set_fraction(percent);
-        return false;
-    });
-}
-
-
-//TODO make this handle handbrake's stupid ass carriage return chars
-void handbrakeProcessThread(std::atomic<int>* progress, std::string command, int taskCount){
-
-    command = command + " 2>&1";
-    int bufferSize = 2048;
-    double lastPercent = 0.0;
-    FILE* pipe = popen(command.c_str(), "r");
-    char buffer[bufferSize];
-    char ch;
-    int i = 0;
-    int addedPercent = 0;
-    while((ch = fgetc(pipe)) != EOF){
-
-        if(ch == '\r' || ch == '\n'){
-
-            buffer[i] = '\0';
-            std::string s = std::string(buffer);
-            std::cout << "s: " << s << "\n";
-
-
-            //TODO clean up
-            std::vector<std::string> vec = splitString(s, 'k');
-            if(vec.size() > 0 && vec.at(0) == "Encoding: tas"){
-                double percent = std::stod(splitString(s, ' ').at(5)) * 100;
-                //std::cout << "int: " << int((percent - lastPercent) / taskCount) << "\n";
-                progress->fetch_add(int((percent - lastPercent) / taskCount));
-                addedPercent += int((percent - lastPercent) / taskCount);
-                lastPercent = percent;
-            }
-            i = 0;
-        }
-        else if(i < bufferSize - 1){
-            buffer[i] = ch;
-            i++;
-        }
-
-    }
-
-    std::cout << "last percent: " << lastPercent << "\n";
-    std::cout << "taskCount: " << taskCount << "\n";
-    std::cout << "int((10000.0 - lastPercent) / taskCount): " << int((10000.0 - lastPercent) / taskCount) << "\n";
-    progress->fetch_add(int((10000.0 - lastPercent) / taskCount));
-    addedPercent += int((10000.0 - lastPercent) / taskCount);
-    std::cout << "thread done: " << addedPercent << "\n";
-}
-
-
-bool checkAllThreadsJoinable(std::vector<std::thread>& threads){
-
-    for(std::thread& t : threads){
-        if(!t.joinable()){
-            return false;
-        }
-    }
-    return true;
-
-}
-
-
-void MainWindow::onRipDvd() {
-    std::cout << "Ripping DVD..." << std::endl;
-    setProgressBar(makemkvProgressBar, 0.0);
-    //sg cdrom -c "makemkvcon mkv dev:/dev/sr0 all temptest --progress=-stdout"
-
-    
-    //run makemkvcon
-    char buffer[2048];
-    std::string device = "/dev/sr0";
-    std::string workingDirString = "/home/light/Desktop/dvdstreaming/DesktopUploadApplication/temptest";
-    /*
-    std::string ripCommand = "sg cdrom -c \"makemkvcon mkv dev:" + device + " all " + workingDirString + " --progress=-stdout\"";
-    std::cout << "command: " << ripCommand << "\n";
-    FILE* pipe = popen(ripCommand.c_str(), "r");
-
-    if(!pipe){
-        //TODO errory
-    }
-
-    try{
-        int stage = 0;
-        double lastPercent = 0.0;
-        while(fgets(buffer, sizeof buffer, pipe) != nullptr){
-
-            std::string s = std::string(buffer);
-            std::cout << "\"" << s << "\"\n";
-
-            if(splitString(s, '-').at(0) == "Current progress "){
-
-                //std::cout << "here1\n";
-                std::string subPercentString = splitString(s, ' ').at(8);
-                //std::cout << "here2\n";
-                double subPercent = std::stod(splitString(subPercentString, '%').at(0)) / 100.0;
-                std::cout << "subPercent: " << subPercent << "\n";
-                //std::cout << "here3\n";
-                double finalPercent = 0.0;
-                if(stage == 1){
-                    finalPercent = subPercent * 0.05;
-                }
-                if(stage == 2){
-                    finalPercent = (subPercent * 0.95) + 0.05;
-                }
-
-                std::cout << "percent: " << finalPercent << "\n";
-                if(lastPercent != finalPercent){
-                    setProgressBar(makemkvProgressBar, finalPercent);
-                }
-                lastPercent = finalPercent;
-            }
-            else if(s == "Current action: Processing title sets\n"){
-                std::cout << "stage1\n";
-                stage = 1;
-            }
-            else if(s == "Current operation: Saving all titles to MKV files\n"){
-                std::cout << "stage2\n";
-                stage = 2;
-            }
-
-
-            
-            Glib::signal_idle().connect([makemkvProgressBar]() {
-                makemkvProgressBar->pulse();
-                return false;
-            });
-            
-           std::cout << "end1\n";
-        }
-
-    }
-    catch(const std::exception& e){
-        pclose(pipe);
-        //TODO error
-    }
-    pclose(pipe);
-    */
-
-    setProgressBar(makemkvProgressBar, 1.0);
-
-
-
-    //when mkv done run handbrake
-
-
-    //HandBrakeCLI -i file.mkv -o 0.mp4
-
-
-
-
-    //create handbrake threads
-    std::vector<std::thread> threads = std::vector<std::thread>();
-    std::vector<std::string> files = std::vector<std::string>();
-    fs::directory_entry workingDir{workingDirString};
-    int i = 0;
-    std::atomic<int>* progress = new std::atomic<int>(0);
-    for(const auto& entry : fs::directory_iterator(workingDirString)){
-        std::string handbrakeCommand = "HandBrakeCLI -i \"" + entry.path().string() + "\" -o " + std::to_string(i) + ".mp4 | cat";
-        std::thread t(handbrakeProcessThread, progress, handbrakeCommand, 12);
-        t.detach();
-        threads.push_back(std::move(t));
-        files.push_back(workingDirString + std::to_string(i) + ".mp4");
-        i++;
-    }
-
-
-    //TODO make its own thread?
-    //create video pages for when handbrake completes
-    std::vector<std::string> videoPagesStrings = std::vector<std::string>();
-    for(int i = 0; i < files.size(); i++){
-        std::string pageName = "movieVideoPage" + std::to_string(i);
-        videoPagesStrings.push_back(pageName);
-    }
-    this->movieVideoOptionsPages = videoPagesStrings;
-    Glib::signal_idle().connect([this, files]() {
-        for(int i = 0; i < this->movieVideoOptionsPages.size(); i++){
-            auto vidPage = Gtk::manage(new Gtk::Box(Gtk::ORIENTATION_VERTICAL, 10));
-            stack->add(*vidPage, this->movieVideoOptionsPages.at(i), "Video Details Page " + std::to_string(i));
-            this->setupMovieVideoOptionsPage(vidPage, files.at(i));
-        }
-    });
-
-    
-    //handle handbrake progress bar. Check if threads are finished.
-    int prog = 0;
-    while(true){
-        std::chrono::_V2::system_clock::time_point time = std::chrono::system_clock::now();
-        prog = *progress;
-        setProgressBar(handbrakeProgressBar, double(prog) / double(10000));
-        if(checkAllThreadsJoinable(threads)){
-            break;
-        }
-        std::cout << "percent" << double(prog) / double(10000) << "\n";
-        std::this_thread::sleep_until(time + std::chrono::milliseconds(500));
-    }
-
-
-    //load next page
-    std::cout << "done!\n";
-    this->loadMovieVideoOptionsPage(0);
-
-
-}

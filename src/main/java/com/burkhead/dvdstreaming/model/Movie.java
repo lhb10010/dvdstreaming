@@ -34,6 +34,10 @@ public class Movie implements Media, VideoContainer {
     @Column(columnDefinition = "MEDIUMBLOB")
     private byte[] thumbnail;
 
+    @JsonIgnore
+    @OneToMany
+    private Video[] extras;
+
 
     // ----------------------------- Constructors -------------------------------
 
@@ -47,6 +51,18 @@ public class Movie implements Media, VideoContainer {
         this.genre = genre;
         this.thumbnail = image;
         this.movieVideo = video;
+        this.lastTimeWatchedPos = 0;
+        this.lastTimeWatched = -1;
+
+    }
+
+
+    public Movie(String title, String genre, byte[] image){
+
+        this.title = title;
+        this.genre = genre;
+        this.thumbnail = image;
+        this.movieVideo = null;
         this.lastTimeWatchedPos = 0;
         this.lastTimeWatched = -1;
 

@@ -44,7 +44,7 @@ public class UploadMovieController {
 
         //check that all fields are present
         if(!(json.hasNonNull("title") && json.hasNonNull("image") &&
-                json.hasNonNull("genre") &&  json.hasNonNull("video"))){
+                json.hasNonNull("genre"))){
             //TODO 400
         }
 
@@ -73,12 +73,12 @@ public class UploadMovieController {
         */
 
 
-        long video = json.get("video").asLong();
-        Video v = videoRepository.findVideoById(video);
+        //long video = json.get("video").asLong();
+        //Video v = videoRepository.findVideoById(video);
 
 
         //create new movie object
-        Movie m = new Movie(title, genre, decodedImage, v);
+        Movie m = new Movie(title, genre, decodedImage);
 
         movieRepository.save(m);
 
@@ -90,4 +90,8 @@ public class UploadMovieController {
 
 
     }
+
+
+    //addVideo
+    //addExtraVideo
 }

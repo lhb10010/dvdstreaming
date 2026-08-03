@@ -10,6 +10,8 @@ class http{
         http(std::string ip, int port);
         std::string requestCreateMovie();
         std::string requestCreateVideo();
+        int sendCreateMovieRequest(std::string title, std::string genre, unsigned char* imageData, int imageDataLen);
+        int uploadVideo(std::string vidFilePath);
 
 
     private:
@@ -17,6 +19,9 @@ class http{
         std::string ip;
         int port;
         int createSocket();
+
+
+
 
 
 };
